@@ -1,4 +1,4 @@
-import React, { MouseEvent, useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { create_download_link, FileStat, read_dir } from "../../apis/file";
 import path from 'path-browserify';
 import style from './index.module.less';

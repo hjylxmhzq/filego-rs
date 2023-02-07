@@ -17,12 +17,13 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: actions/setup-node@v3
+    - name: Build frontend
+      uses: actions/setup-node@v3
       with:
         node-version: 16
-    - run: bash ./build/frontend.sh
+      run: bash ./build/frontend.sh
 
-    - name: Build
+    - name: Build backend
       run: bash ./build/backend.sh
     - name: Upload math result for job 1
       uses: actions/upload-artifact@v3
