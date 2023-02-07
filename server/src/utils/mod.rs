@@ -5,3 +5,4 @@ pub mod parser;
 pub mod crypto;
 pub mod session;
 pub mod performance;
+pub mod auth;

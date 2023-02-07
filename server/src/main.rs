@@ -3,6 +3,7 @@ use actix_web::dev::Service;
 use actix_web::{self, web, App, HttpServer};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
+use utils::auth::auto_create_user;
 use std::{
   collections::HashMap,
   env, fs,
@@ -26,14 +27,16 @@ pub struct UserSessionData {
   username: String,
   is_login: bool,
   last_login: u64,
+  user_root: String,
 }
 
 impl UserSessionData {
-  pub fn new(username: &str) -> UserSessionData {
+  pub fn new(username: &str, user_root: &str) -> UserSessionData {
     UserSessionData {
       is_login: true,
       username: username.to_string(),
       last_login: 0,
+      user_root: user_root.to_string(),
     }
   }
 }
@@ -133,7 +136,10 @@ fn init() -> AppState {
   abs_static_root.push(static_root);
   fs::create_dir_all(&abs_file_root).unwrap();
 
-  let conn = connect_db();
+  let mut conn = connect_db();
+
+  auto_create_user(&mut conn);
+
   let state = AppState {
     config: AppConfig {
       file_root: abs_file_root,

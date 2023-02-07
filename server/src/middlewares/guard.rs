@@ -5,11 +5,12 @@ use actix_web::dev::ServiceRequest;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::utils::{error::AppError, session::is_login};
+use crate::utils::{error::AppError, session::SessionUtils};
 
 lazy_static! {
   pub static ref IGNORE_PATHS: Vec<Regex> = vec![Regex::new(r#"^/static/.+"#).unwrap()];
-  pub static ref ALLOW_PATHS: HashSet<&'static str> = vec!["/auth/login", "/"].into_iter().collect();
+  pub static ref ALLOW_PATHS: HashSet<&'static str> =
+    vec!["/auth/login", "/"].into_iter().collect();
 }
 
 pub fn guard(req: &ServiceRequest) -> Result<bool, AppError> {
@@ -24,5 +25,5 @@ pub fn guard(req: &ServiceRequest) -> Result<bool, AppError> {
     return Ok(true);
   }
   let sess = r.get_session();
-  is_login(sess)
+  sess.is_login()
 }
