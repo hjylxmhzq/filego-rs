@@ -68,7 +68,7 @@ pub type AppData = Arc<RwLock<AppState>>;
 #[allow(unused)]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-  env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+  // env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
   let mut app_state = init();
   let static_root = app_state.config.static_root.clone();
@@ -109,7 +109,7 @@ async fn main() -> std::io::Result<()> {
         }
       })
       .wrap(middlewares::session::session())
-      .wrap(Logger::default())
+      // .wrap(Logger::default())
   })
   .bind(addr)?
   .run()
