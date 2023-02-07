@@ -5,9 +5,9 @@ use crate::utils::parser::parse_range;
 use crate::utils::performance::timer;
 use crate::utils::response::{create_binary_resp, create_stream_resp, EmptyResponseData};
 use crate::utils::session::SessionUtils;
-use crate::utils::vfs::read_file_stream;
+use crate::utils::vfs::{read_file_stream, FileStatWithName};
 use crate::utils::{response::create_resp, vfs};
-use crate::{AppData, any_params};
+use crate::{any_params, AppData};
 use actix_session::Session;
 use actix_web::{web, HttpRequest, HttpResponse, Scope};
 use serde::{Deserialize, Serialize};
@@ -19,18 +19,47 @@ pub struct GetFilesOfDirReq {
 
 #[derive(Serialize)]
 pub struct GetFilesOfDirResp {
-  files: Vec<String>,
+  files: Vec<FileStatWithName>,
 }
 
-pub async fn fs_actions(
+pub async fn fs_actions_get(
   path: web::Path<(String,)>,
-  req: web::Json<GetFilesOfDirReq>,
   query: web::Query<GetFilesOfDirReq>,
   req_raw: HttpRequest,
   state: web::Data<AppData>,
   sess: Session,
+) -> Result<HttpResponse, AppError>{
+  let file = query
+  .borrow()
+  .file
+  .clone()
+  .ok_or(AppError::new("query params error"))?;
+  fs_actions(path, &file, true, req_raw, state, sess).await
+}
+
+pub async fn fs_actions_post(
+  path: web::Path<(String,)>,
+  query: web::Json<GetFilesOfDirReq>,
+  req_raw: HttpRequest,
+  state: web::Data<AppData>,
+  sess: Session,
+) -> Result<HttpResponse, AppError>{
+  let file = query
+  .borrow()
+  .file
+  .clone()
+  .ok_or(AppError::new("query params error"))?;
+  fs_actions(path, &file, false, req_raw, state, sess).await
+}
+
+pub async fn fs_actions(
+  path: web::Path<(String,)>,
+  file: &str,
+  is_download: bool,
+  req_raw: HttpRequest,
+  state: web::Data<AppData>,
+  sess: Session,
 ) -> Result<HttpResponse, AppError> {
-  let file = any_params!(req, query, file).ok_or(AppError::new("param error"))?;
   let file_root = &state.read().unwrap().config.file_root;
   let user_root = &sess.get_user_root()?;
   let action = path.into_inner().0;
@@ -52,7 +81,7 @@ pub async fn fs_actions(
       let range = parse_range(headers, file_stat.size)?;
       let stream = read_file_stream(
         file_root.clone(),
-        "".to_owned(),
+        user_root.to_owned(),
         file.to_owned(),
         Some(range),
       )
@@ -60,7 +89,7 @@ pub async fn fs_actions(
       let mime = mime_guess::from_path(file.to_owned())
         .first()
         .map(|m| m.to_string());
-      Ok(create_stream_resp(stream, mime))
+      Ok(create_stream_resp(stream, mime, Some(file)))
     }
 
     "delete" => {
@@ -115,15 +144,32 @@ pub struct ReadImageReq {
   pub resize: Option<u32>,
 }
 
-pub async fn read_image(
-  req: web::Json<ReadImageReq>,
+pub async fn read_image_get(
   query: web::Query<ReadImageReq>,
   state: web::Data<AppData>,
   sess: Session,
 ) -> Result<HttpResponse, AppError> {
-  let file = any_params!(req, query, file).ok_or(AppError::new("error params"))?;
+  let file = query.file.clone().ok_or(AppError::new("params error"))?;
+  let resize = query.resize;
+  read_image(&file, resize, state, sess).await
+}
 
-  let resize = any_params!(req, query, resize);
+pub async fn read_image_post(
+  query: web::Json<ReadImageReq>,
+  state: web::Data<AppData>,
+  sess: Session,
+) -> Result<HttpResponse, AppError> {
+  let file = query.file.clone().ok_or(AppError::new("params error"))?;
+  let resize = query.resize;
+  read_image(&file, resize, state, sess).await
+}
+
+pub async fn read_image(
+  file: &str,
+  resize: Option<u32>,
+  state: web::Data<AppData>,
+  sess: Session,
+) -> Result<HttpResponse, AppError> {
   let file_root = &state.read().unwrap().config.file_root;
   let user_root = sess.get_user_root()?;
 
@@ -132,7 +178,13 @@ pub async fn read_image(
     .map(|m| m.to_string());
 
   timer("read image");
-  let img = vfs::read_image(file_root.clone(), user_root.clone(), file.to_string(), resize).await?;
+  let img = vfs::read_image(
+    file_root.clone(),
+    user_root.clone(),
+    file.to_string(),
+    resize,
+  )
+  .await?;
   timer("read image");
   Ok(create_binary_resp(img, mime))
 }
@@ -140,8 +192,8 @@ pub async fn read_image(
 pub fn file_routers() -> Scope {
   web::scope("/file")
     .route("/upload", web::post().to(upload))
-    .route("/read_image", web::post().to(read_image))
-    .route("/read_image", web::get().to(read_image))
-    .route("/{action}", web::post().to(fs_actions))
-    .route("/{action}", web::get().to(fs_actions))
+    .route("/read_image", web::post().to(read_image_post))
+    .route("/read_image", web::get().to(read_image_get))
+    .route("/{action}", web::get().to(fs_actions_get))
+    .route("/{action}", web::post().to(fs_actions_post))
 }

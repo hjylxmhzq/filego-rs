@@ -2,7 +2,7 @@ use diesel::{RunQueryDsl, SqliteConnection};
 
 use crate::{
   models::{NewUser, User},
-  schema,
+  schema, utils::crypto::hash_pwd,
 };
 pub fn auto_create_user(db: &mut SqliteConnection) {
   use crate::schema::users::dsl::*;
@@ -13,7 +13,7 @@ pub fn auto_create_user(db: &mut SqliteConnection) {
   diesel::insert_into(schema::users::table)
     .values(NewUser {
       username: "admin",
-      password: "admin",
+      password: &hash_pwd("admin"),
       email: "",
       user_type: 0,
       user_root: "",

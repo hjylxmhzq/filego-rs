@@ -1,5 +1,5 @@
 import { RouteObject } from 'react-router';
-import FilePage from './pages/file';
+import { HomePage } from './pages/home';
 import LoginPage from './pages/login';
 
 const routers: RouteObject[] = [
@@ -9,7 +9,7 @@ const routers: RouteObject[] = [
   },
   {
     path: '/',
-    element: <FilePage />,
+    element: <HomePage />,
   }
 ];
 

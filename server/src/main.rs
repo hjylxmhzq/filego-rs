@@ -3,7 +3,6 @@ use actix_web::dev::Service;
 use actix_web::{self, web, App, HttpServer};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
-use utils::auth::auto_create_user;
 use std::{
   collections::HashMap,
   env, fs,
@@ -13,6 +12,7 @@ use std::{
   sync::{Arc, RwLock},
 };
 use tokio::sync::Mutex;
+use utils::auth::auto_create_user;
 mod middlewares;
 pub mod models;
 mod routers;
@@ -21,6 +21,9 @@ mod utils;
 use actix_web::middleware::Logger;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
+
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserSessionData {
@@ -76,11 +79,14 @@ async fn main() -> std::io::Result<()> {
 
   let addr = SocketAddr::from_str(format!("{host}:{port}").as_str()).unwrap();
   drop(state);
+
   println!("server start on {addr:?}");
 
+  println!("{static_root:?}");
   HttpServer::new(move || {
     App::new()
       .app_data(web::Data::new(app_state.clone()))
+      .service(actix_files::Files::new("/static", static_root.clone()))
       .service(routers::fs::file_routers())
       .service(routers::auth::auth_routers())
       .service(routers::index::index_routers())
@@ -104,11 +110,6 @@ async fn main() -> std::io::Result<()> {
       })
       .wrap(middlewares::session::session())
       .wrap(Logger::default())
-      .service(
-        actix_files::Files::new("/", static_root.clone())
-          .show_files_listing()
-          .index_file("index.html"),
-      )
   })
   .bind(addr)?
   .run()
@@ -116,11 +117,14 @@ async fn main() -> std::io::Result<()> {
 }
 
 fn init() -> AppState {
-  dotenv().map_or_else(|_| {
-    println!("can not find .env file, use default value");
-  }, |v| {
-    println!("find .env file at {v:?}");
-  });
+  dotenv().map_or_else(
+    |_| {
+      println!("can not find .env file, use default value");
+    },
+    |v| {
+      println!("find .env file at {v:?}");
+    },
+  );
 
   let port: i32 = std::env::var("PORT")
     .unwrap_or("7001".to_string())
@@ -158,8 +162,11 @@ fn init() -> AppState {
 
 fn connect_db() -> SqliteConnection {
   let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-  let conn =
+  let mut conn =
     SqliteConnection::establish(&database_url).expect("can not establish database connection");
   println!("database is connected");
+  println!("running migrations");
+  MigrationHarness::run_pending_migrations(&mut conn, MIGRATIONS).unwrap();
+  println!("migrations finished");
   conn
 }

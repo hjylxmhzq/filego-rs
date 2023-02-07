@@ -9,8 +9,16 @@ use crate::utils::{error::AppError, session::SessionUtils};
 
 lazy_static! {
   pub static ref IGNORE_PATHS: Vec<Regex> = vec![Regex::new(r#"^/static/.+"#).unwrap()];
-  pub static ref ALLOW_PATHS: HashSet<&'static str> =
-    vec!["/auth/login", "/"].into_iter().collect();
+  pub static ref ALLOW_PATHS: HashSet<&'static str> = vec![
+    "/auth/login",
+    "/login",
+    "/",
+    // "/asset-manifest.json",
+    // "/favicon.ico",
+    // "/robots.txt"
+  ]
+  .into_iter()
+  .collect();
 }
 
 pub fn guard(req: &ServiceRequest) -> Result<bool, AppError> {
