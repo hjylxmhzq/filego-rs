@@ -14,14 +14,16 @@ pub async fn read_dir(
   user_root: String,
   dir: String,
 ) -> Result<Vec<FileStatWithName>, AppError> {
+  let odir = PathBuf::from(&dir);
   let dir = normailze_path(&file_root, &user_root, &dir);
-
+  println!("{dir:?}");
   let mut result = fs::read_dir(&dir).await?;
   let mut files_in_dir: Vec<FileStatWithName> = vec![];
   while let Result::Ok(Option::Some(dir_entry)) = result.next_entry().await {
     let filename = dir_entry.file_name().to_string_lossy().into_owned();
-    println!("{file_root:?} - {user_root:?} - {file_root:?} - {user_root} - {filename}");
-    let file_stat = stat(file_root.clone(), user_root.clone(), filename.clone()).await?;
+    let file_path = odir.join(&filename);
+    let file_path = file_path.to_str().map_or("", |v| v);
+    let file_stat = stat(file_root.clone(), user_root.clone(), file_path).await?;
     let file_stat_with_name = FileStatWithName::new(&file_stat, &filename);
     files_in_dir.push(file_stat_with_name);
   }
@@ -52,10 +54,9 @@ pub async fn read_image(
 pub async fn stat(
   file_root: PathBuf,
   user_root: String,
-  file: String,
+  file: &str,
 ) -> Result<FileStat, AppError> {
   let dir = normailze_path(&file_root, &user_root, &file);
-  println!("{dir:?}");
   let meta = fs::metadata(dir).await?;
   convert_meta_to_struct(meta)
 }
@@ -74,7 +75,7 @@ pub async fn create(
 
 pub async fn delete(file_root: PathBuf, user_root: String, file: String) -> Result<(), AppError> {
   let dir = normailze_path(&file_root, &user_root, &file);
-  let path_stat = stat(file_root, user_root.clone(), file).await?;
+  let path_stat = stat(file_root, user_root.clone(), &file).await?;
   if path_stat.is_dir {
     fs::remove_dir_all(dir).await?;
   } else {

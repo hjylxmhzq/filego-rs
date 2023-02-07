@@ -11,7 +11,7 @@ impl From<ParseIntError> for AppError {
   }
 }
 
-pub fn parse_range(headers: &HeaderMap, max_len: u64) -> Result<(u64, u64), AppError> {
+pub fn parse_range(headers: &HeaderMap, max_len: u64) -> Result<(u64, u64, bool), AppError> {
   lazy_static! {
     static ref RE: Regex = Regex::new(r#"bytes=(\d*?)-(\d*?)(,|$|\s)"#).unwrap();
   }
@@ -21,7 +21,7 @@ pub fn parse_range(headers: &HeaderMap, max_len: u64) -> Result<(u64, u64), AppE
     let s = range.to_str();
 
     match s {
-      Err(_) => Ok((0, max_len)),
+      Err(_) => Ok((0, max_len, false)),
       Ok(s) => {
         let caps = RE.captures(s).ok_or(AppError::new("range header error"))?;
         let first = caps.get(1).unwrap();
@@ -31,13 +31,13 @@ pub fn parse_range(headers: &HeaderMap, max_len: u64) -> Result<(u64, u64), AppE
         let f = if f.len() > 0 { f.parse::<u64>()? } else { 0 };
         if s.len() > 0 {
           let s = s.parse::<u64>()?;
-          return Ok((f, s));
+          return Ok((f, s, true));
         }
-        return Ok((f, max_len));
+        return Ok((f, max_len, true));
       }
     }
   } else {
-    return Ok((0, max_len));
+    return Ok((0, max_len, false));
   }
 }
 

@@ -7,7 +7,7 @@ use crate::utils::response::{create_binary_resp, create_stream_resp, EmptyRespon
 use crate::utils::session::SessionUtils;
 use crate::utils::vfs::{read_file_stream, FileStatWithName};
 use crate::utils::{response::create_resp, vfs};
-use crate::{any_params, AppData};
+use crate::AppData;
 use actix_session::Session;
 use actix_web::{web, HttpRequest, HttpResponse, Scope};
 use serde::{Deserialize, Serialize};
@@ -28,12 +28,12 @@ pub async fn fs_actions_get(
   req_raw: HttpRequest,
   state: web::Data<AppData>,
   sess: Session,
-) -> Result<HttpResponse, AppError>{
+) -> Result<HttpResponse, AppError> {
   let file = query
-  .borrow()
-  .file
-  .clone()
-  .ok_or(AppError::new("query params error"))?;
+    .borrow()
+    .file
+    .clone()
+    .ok_or(AppError::new("query params error"))?;
   fs_actions(path, &file, true, req_raw, state, sess).await
 }
 
@@ -43,12 +43,12 @@ pub async fn fs_actions_post(
   req_raw: HttpRequest,
   state: web::Data<AppData>,
   sess: Session,
-) -> Result<HttpResponse, AppError>{
+) -> Result<HttpResponse, AppError> {
   let file = query
-  .borrow()
-  .file
-  .clone()
-  .ok_or(AppError::new("query params error"))?;
+    .borrow()
+    .file
+    .clone()
+    .ok_or(AppError::new("query params error"))?;
   fs_actions(path, &file, false, req_raw, state, sess).await
 }
 
@@ -77,19 +77,30 @@ pub async fn fs_actions(
     }
 
     "read" => {
-      let file_stat = vfs::stat(file_root.clone(), user_root.clone(), file.to_owned()).await?;
-      let range = parse_range(headers, file_stat.size)?;
+      let file_stat = vfs::stat(file_root.clone(), user_root.clone(), file).await?;
+      let (range_start, range_end, _) = parse_range(headers, file_stat.size)?;
       let stream = read_file_stream(
         file_root.clone(),
         user_root.to_owned(),
         file.to_owned(),
-        Some(range),
+        Some((range_start, range_end)),
       )
       .await?;
       let mime = mime_guess::from_path(file.to_owned())
         .first()
         .map(|m| m.to_string());
-      Ok(create_stream_resp(stream, mime, Some(file)))
+      let resp = if is_download {
+        create_stream_resp(
+          stream,
+          mime,
+          Some(file),
+          (range_start, range_end),
+          range_end,
+        )
+      } else {
+        create_stream_resp(stream, mime, None, (range_start, range_end), range_end)
+      };
+      Ok(resp)
     }
 
     "delete" => {
@@ -98,7 +109,7 @@ pub async fn fs_actions(
     }
 
     "stat" => {
-      let file_stat = vfs::stat(file_root.clone(), user_root.clone(), file.to_owned()).await?;
+      let file_stat = vfs::stat(file_root.clone(), user_root.clone(), file).await?;
       Ok(create_resp(true, file_stat, ""))
     }
     _ => Ok(create_resp(false, EmptyResponseData::new(), "error action")),

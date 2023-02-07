@@ -63,11 +63,17 @@ pub fn create_binary_resp(data: Vec<u8>, mime_type: Option<String>) -> HttpRespo
   resp.body(data)
 }
 
-pub fn create_stream_resp(stream: impl Stream<Item = Result<web::Bytes, std::io::Error>> + 'static, mime_type: Option<String>, download_name: Option<&str>) -> HttpResponse {
-  let mut resp = HttpResponse::Ok();
+pub fn create_stream_resp(stream: impl Stream<Item = Result<web::Bytes, std::io::Error>> + 'static, mime_type: Option<String>, download_name: Option<&str>, range: (u64, u64), size: u64) -> HttpResponse {
+  let mut resp = if range.0 != 0 {
+    HttpResponse::PartialContent()
+  } else {
+    HttpResponse::Ok()
+  };
   if let Some(download_name) = download_name {
     resp.append_header(("Content-Disposition", format!(r#"attachment; filename="{download_name}""#)));
   }
+  resp.append_header(("Accept-Ranges", "bytes"));
+  resp.append_header(("Content-Range", format!("bytes {}-{}/{}", range.0, range.1, size)));
   resp.content_type(if let Some(mime) = mime_type { mime } else { "".to_owned() });
   resp.streaming(stream)
 }
