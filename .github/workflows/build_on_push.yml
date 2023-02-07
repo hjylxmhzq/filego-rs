@@ -17,10 +17,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Build frontend
+    - name: Setup NodeJS Environment
       uses: actions/setup-node@v3
       with:
         node-version: 16
+    - name: Build Frontend
       run: bash ./build/frontend.sh
 
     - name: Build backend
