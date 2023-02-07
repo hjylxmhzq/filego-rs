@@ -1,6 +1,8 @@
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpResponse, web, body::SizedStream};
 use futures::Stream;
 use serde::Serialize;
+use tokio::fs::File;
+use tokio_util::io::ReaderStream;
 
 pub enum AppResponseStatus {
   Success = 0,
@@ -63,7 +65,7 @@ pub fn create_binary_resp(data: Vec<u8>, mime_type: Option<String>) -> HttpRespo
   resp.body(data)
 }
 
-pub fn create_stream_resp(stream: impl Stream<Item = Result<web::Bytes, std::io::Error>> + 'static, mime_type: Option<String>, download_name: Option<&str>, range: (u64, u64), size: u64) -> HttpResponse {
+pub fn create_stream_resp(stream: SizedStream<ReaderStream<File>>, mime_type: Option<String>, download_name: Option<&str>, range: (u64, u64), size: u64) -> HttpResponse {
   let mut resp = if range.0 != 0 {
     HttpResponse::PartialContent()
   } else {
@@ -73,7 +75,8 @@ pub fn create_stream_resp(stream: impl Stream<Item = Result<web::Bytes, std::io:
     resp.append_header(("Content-Disposition", format!(r#"attachment; filename="{download_name}""#)));
   }
   resp.append_header(("Accept-Ranges", "bytes"));
-  resp.append_header(("Content-Range", format!("bytes {}-{}/{}", range.0, range.1, size)));
+  resp.append_header(("Content-Length", size.to_string()));
+  resp.append_header(("Content-Range", format!("bytes {}-{}/{}", range.0, range.1 - 1, size)));
   resp.content_type(if let Some(mime) = mime_type { mime } else { "".to_owned() });
-  resp.streaming(stream)
+  resp.body(stream)
 }

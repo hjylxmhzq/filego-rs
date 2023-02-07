@@ -3,4 +3,5 @@
 .vscode
 /dist
 *.db
-files
+/server/files
+/server/static

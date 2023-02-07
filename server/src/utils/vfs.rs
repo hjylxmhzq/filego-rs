@@ -1,3 +1,4 @@
+use actix_web::body::SizedStream;
 use serde::Serialize;
 use std::io::Cursor;
 use std::path::Path;
@@ -51,11 +52,7 @@ pub async fn read_image(
   Ok(result)
 }
 
-pub async fn stat(
-  file_root: PathBuf,
-  user_root: String,
-  file: &str,
-) -> Result<FileStat, AppError> {
+pub async fn stat(file_root: PathBuf, user_root: String, file: &str) -> Result<FileStat, AppError> {
   let dir = normailze_path(&file_root, &user_root, &file);
   let meta = fs::metadata(dir).await?;
   convert_meta_to_struct(meta)
@@ -142,14 +139,13 @@ pub async fn read_file_stream(
   file_root: PathBuf,
   user_root: String,
   file: String,
-  range: Option<(u64, u64)>,
-) -> Result<ReaderStream<File>, AppError> {
+  range: (u64, u64),
+) -> Result<SizedStream<ReaderStream<File>>, AppError> {
   let dir = normailze_path(&file_root, &user_root, &file);
   let mut f = tokio::fs::File::open(dir).await?;
-  if let Some(seek_pos) = range {
-    f.seek(io::SeekFrom::Start(seek_pos.0)).await.unwrap();
-  }
+  f.seek(io::SeekFrom::Start(range.0)).await.unwrap();
   let reader = ReaderStream::new(f);
+  let reader = SizedStream::new(range.1, reader);
   Ok(reader)
 }
 

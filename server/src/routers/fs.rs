@@ -83,7 +83,7 @@ pub async fn fs_actions(
         file_root.clone(),
         user_root.to_owned(),
         file.to_owned(),
-        Some((range_start, range_end)),
+        (range_start, file_stat.size),
       )
       .await?;
       let mime = mime_guess::from_path(file.to_owned())
@@ -98,7 +98,7 @@ pub async fn fs_actions(
           range_end,
         )
       } else {
-        create_stream_resp(stream, mime, None, (range_start, range_end), range_end)
+        create_stream_resp(stream, mime, None, (range_start, file_stat.size), file_stat.size)
       };
       Ok(resp)
     }
