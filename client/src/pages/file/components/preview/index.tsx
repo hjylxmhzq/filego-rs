@@ -6,14 +6,15 @@ import VideoPreview from './video-viewer';
 
 export default function Preview({ file, dir }: { file: FileStat, dir: string }) {
   let guess = mime.getType(file.name);
+  let inner;
   if (guess?.includes('image')) {
-    return <ImagePreview src={create_download_link(dir, file.name)} />
+    inner = <ImagePreview src={create_download_link(dir, file.name)} />
+  } else if (guess?.includes('text') && file.size < 1024 * 1024 * 1024) {
+    inner = <TextPreview dir={dir} file={file} />
+  } else if (guess?.includes('video')) {
+    inner = <VideoPreview src={create_download_link(dir, file.name)} />
+  } else {
+    inner = <div></div>
   }
-  if (guess?.includes('text') && file.size < 1024 * 1024 * 1024) {
-    return <TextPreview dir={dir} file={file} />
-  }
-  if (guess?.includes('video')) {
-    return <VideoPreview src={create_download_link(dir, file.name)} />
-  }
-  return <div>111</div>
+  return <div style={{ border: '1px solid #ccc', minHeight: 200 }}>{inner}</div>
 }

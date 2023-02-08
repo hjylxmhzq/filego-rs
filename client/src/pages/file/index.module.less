@@ -23,7 +23,36 @@
     text-overflow: ellipsis;
   }
   & > .right-area {
+    display: flex;
+    align-items: center;
+    & .action-btn {
+      transition: all 0.2s;
+      text-decoration: none;
+      margin-left: 5px;
+      color: #333;
+      padding: 2px 10px;
+      border-radius: 3px;
+      line-height: 16px;
+      cursor: pointer;
+      &:hover {
+        background-color: #eee;
+      }
+    }
+  }
+}
 
+.comfirm-content {
+  margin: 3px 10px;
+  font-size: 14px;
+  button {
+    transition: all 0.2s;
+    border: 1px solid #aaa;
+    background-color: #f3f3f3;
+    margin-left: 10px;
+    cursor: pointer;
+    &:hover {
+      background-color: #aaa;
+    }
   }
 }
 
@@ -40,11 +69,19 @@
   cursor: pointer;
   transition: background-color 0.2s;
   padding: 5px 10px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
   &:hover {
     background-color: #eee;
   }
 }
 
+.breadcumb-item-sep {
+  display: inline-block;
+  vertical-align: middle;
+}
 
 .empty-list {
   text-align: center;

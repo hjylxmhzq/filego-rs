@@ -1,5 +1,4 @@
-use actix_web::{HttpResponse, web, body::SizedStream};
-use futures::Stream;
+use actix_web::{HttpResponse, body::SizedStream};
 use serde::Serialize;
 use tokio::fs::File;
 use tokio_util::io::ReaderStream;

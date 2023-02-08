@@ -18,7 +18,6 @@ pub mod models;
 mod routers;
 pub mod schema;
 mod utils;
-use actix_web::middleware::Logger;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 
