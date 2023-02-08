@@ -6,6 +6,8 @@ import Preview from "./components/preview";
 import { Popover } from "../../components/popover";
 import { useRefresh } from "../../hooks/common";
 import LoadingBar from "./components/loading-bar";
+import moment from 'moment';
+import { formatFileSize } from "../../utils/formatter";
 
 export default function FilePage() {
   let [files, setFiles] = useState<any[]>([]);
@@ -76,37 +78,59 @@ function Breadcumb({ onJumpPath, currentPath }: { onJumpPath: (p: string) => voi
 
 function FileList({ files, onClickFile, currentDir, onReload }: { files: FileStat[], onClickFile: (file: FileStat) => void, currentDir: string, onReload: () => void }) {
 
-  return <div>
+  const actionsMenu = (file: FileStat) => <div className={style['action-menu']}>
+    <div className={style['action-btn']}>
+      <DeleteBtn dir={currentDir} file={file} onDeleteFinish={onReload} />
+    </div>
     {
-      files.map(file => {
-        return <div
-          className={style['file-item']}
-          key={file.name}
-          data-filename={file.name}
-          data-isdir={file.is_dir}
-        >
-          <span
-            onClick={() => onClickFile(file)}
-            className={style['left-area']}>
-            {file.name}
-          </span>
-          <span className={style['right-area']}>
-            <DeleteBtn dir={currentDir} file={file} onDeleteFinish={onReload} />
-            {
-              file.is_file &&
-              <a
-                className={style['action-btn']}
-                download={file.name}
-                target="_blank"
-                rel="noreferrer"
-                href={create_download_link(currentDir, file.name)}>
-                下载
-              </a>
-            }
-          </span>
-        </div>
-      })
+      file.is_file &&
+      <a
+        className={style['action-btn']}
+        download={file.name}
+        target="_blank"
+        rel="noreferrer"
+        href={create_download_link(currentDir, file.name)}>
+        下载
+      </a>
     }
+  </div>;
+
+  return <div className={style['file-list']}>
+    <div className={style['file-head']}>
+      <div>文件名</div>
+      <div>创建时间</div>
+      <div>大小</div>
+    </div>
+    <div>
+      {
+        files.map(file => {
+          return <div
+            className={style['file-item']}
+            key={file.name}
+            data-filename={file.name}
+            data-isdir={file.is_dir}
+          >
+            <div
+              className={style['left-area']}>
+              <span
+                onClick={() => onClickFile(file)}
+              >
+                {file.name}
+              </span>
+              <Popover auto={true} content={actionsMenu(file)}>
+                <span>...</span>
+              </Popover>
+            </div>
+            <div className={style['right-area']}>
+              {moment.unix(file.created / 1000 >> 0).format('YYYY/MM/DD')}
+            </div>
+            <div>
+              {formatFileSize(file.size)}
+            </div>
+          </div>
+        })
+      }
+    </div>
   </div>
 }
 

@@ -17,7 +17,6 @@ pub async fn read_dir(
 ) -> Result<Vec<FileStatWithName>, AppError> {
   let odir = PathBuf::from(&dir);
   let dir = normailze_path(&file_root, &user_root, &dir);
-  println!("{dir:?}");
   let mut result = fs::read_dir(&dir).await?;
   let mut files_in_dir: Vec<FileStatWithName> = vec![];
   while let Result::Ok(Option::Some(dir_entry)) = result.next_entry().await {

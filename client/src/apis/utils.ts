@@ -33,5 +33,9 @@ export async function post_raw(api: string, body: any, tag: string = 'default') 
       'content-type': 'application/json',
     }
   })
+  let idx = handlers.findIndex(i => i === abort);
+  if (idx !== -1) {
+    handlers.splice(idx, 1);
+  }
   return resp;
 }

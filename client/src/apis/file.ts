@@ -6,6 +6,9 @@ export interface FileStat {
   size: number;
   is_dir: boolean;
   is_file: boolean;
+  created: number;
+  modified: number;
+  accessed: number;
 }
 
 export async function read_dir(dir: string): Promise<FileStat[]> {
