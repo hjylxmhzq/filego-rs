@@ -188,7 +188,6 @@ pub async fn read_image(
     .first()
     .map(|m| m.to_string());
 
-  timer("read image");
   let img = vfs::read_image(
     file_root.clone(),
     user_root.clone(),
@@ -196,7 +195,6 @@ pub async fn read_image(
     resize,
   )
   .await?;
-  timer("read image");
   Ok(create_binary_resp(img, mime))
 }
 

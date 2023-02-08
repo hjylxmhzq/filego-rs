@@ -10,7 +10,6 @@ pub fn index_routers() -> Scope {
 }
 
 pub async fn index(state: web::Data<AppData>) -> Result<NamedFile, AppError> {
-  println!("aaaa");
   let static_root = state.read().unwrap().config.static_root.clone();
   Ok(NamedFile::open(static_root.join("index.html"))?)
 }
