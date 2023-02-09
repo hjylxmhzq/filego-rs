@@ -13,21 +13,26 @@
   border: 1px solid #eee;
   margin-bottom: 10px;
   font-size: 12px;
-  padding: 0px 20px;
   display: flex;
   justify-content: space-between;
-  & > div {
+
+  &>div {
+    padding: 0px 20px;
+
     &:first-child {
       flex: 1 1 auto;
     }
+
     &:nth-last-child(1) {
       width: 135px;
     }
+
     &:nth-last-child(2) {
       width: 120px;
     }
   }
-  & > .left-area {
+
+  &>.left-area {
     cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -35,9 +40,11 @@
     justify-content: space-between;
     padding-right: 10px;
   }
-  & > .right-area {
+
+  &>.right-area {
     display: flex;
     align-items: center;
+
     & .action-btn {
       transition: all 0.2s;
       text-decoration: none;
@@ -46,6 +53,7 @@
       border-radius: 3px;
       line-height: 16px;
       cursor: pointer;
+
       &:hover {
         background-color: #eee;
       }
@@ -56,12 +64,14 @@
 .comfirm-content {
   margin: 3px 10px;
   font-size: 14px;
+
   button {
     transition: all 0.2s;
     border: 1px solid #aaa;
     background-color: #f3f3f3;
     margin-left: 10px;
     cursor: pointer;
+
     &:hover {
       background-color: #aaa;
     }
@@ -85,6 +95,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
+  word-break: break-all;
+
   &:hover {
     background-color: #eee;
   }
@@ -107,19 +119,37 @@
   padding: 5px;
 }
 
+.ease-in {
+  animation: fade-in 0.3s 1 ease-out forwards;
+}
+
 .file-head {
   display: flex;
   justify-content: space-between;
-  padding: 0px 20px;
   height: 35px;
   line-height: 30px;
-  & > div {
+  position: sticky;
+  top: 0px;
+  background-color: white;
+  border-bottom: 1px solid #eee;
+
+  &>div {
+    transition: background-color 0.2s;
+    cursor: pointer;
+    padding: 0px 20px;
+
+    &:hover {
+      background-color: #f3f3f3;
+    }
+
     &:first-child {
       flex: 1 1 auto;
     }
+
     &:nth-last-child(1) {
       width: 135px;
     }
+
     &:nth-last-child(2) {
       width: 120px;
     }
@@ -128,7 +158,8 @@
 
 .action-menu {
   padding: 2px;
-  & > .action-btn {
+
+  &>.action-btn {
     text-decoration: none;
     width: 100px;
     font-size: 12px;
@@ -136,8 +167,32 @@
     display: block;
     padding: 5px;
     color: #333;
+
     &:hover {
       background-color: #eee;
     }
+  }
+}
+
+.sort-icon {
+  font-size: 14px;
+  margin-left: 10px;
+  color: #aaa;
+  display: inline-block;
+  transform: rotate(90deg);
+
+  &.revert-icon {
+    transform: rotate(-90deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0px);
   }
 }

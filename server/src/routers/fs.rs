@@ -1,8 +1,6 @@
 use std::borrow::Borrow;
-
 use crate::utils::error::AppError;
 use crate::utils::parser::parse_range;
-use crate::utils::performance::timer;
 use crate::utils::response::{create_binary_resp, create_stream_resp, EmptyResponseData};
 use crate::utils::session::SessionUtils;
 use crate::utils::vfs::{read_file_stream, FileStatWithName};
@@ -11,6 +9,9 @@ use crate::AppData;
 use actix_session::Session;
 use actix_web::{web, HttpRequest, HttpResponse, Scope};
 use serde::{Deserialize, Serialize};
+
+#[cfg(debug_assertions)]
+use crate::utils::performance::timer;
 
 #[derive(Deserialize)]
 pub struct GetFilesOfDirReq {
@@ -195,6 +196,7 @@ pub async fn read_image(
     resize,
   )
   .await?;
+
   Ok(create_binary_resp(img, mime))
 }
 

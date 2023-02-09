@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { create_download_link, delete_file, FileStat, read_dir } from "../../apis/file";
 import path from 'path-browserify';
 import style from './index.module.less';
@@ -8,6 +8,7 @@ import { useRefresh } from "../../hooks/common";
 import LoadingBar from "./components/loading-bar";
 import moment from 'moment';
 import { formatFileSize } from "../../utils/formatter";
+import classnames from 'classnames';
 
 export default function FilePage() {
   let [files, setFiles] = useState<any[]>([]);
@@ -95,15 +96,57 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
     }
   </div>;
 
-  return <div className={style['file-list']}>
+  let copiedFiles = useMemo(() => files.slice(), [files]);
+
+  let [sortKey, setSortKey] = useState<keyof FileStat | undefined>();
+  let [sortType, setSortType] = useState<-1 | 1>(1);
+
+  if (sortKey) {
+    copiedFiles.sort((a, b) => {
+      return a[sortKey!] < b[sortKey!] ? -1 * sortType : 1 * sortType;
+    });
+  }
+
+  const [animationClass, setAnimationClass] = useState(true);
+
+  const setSort = (key?: keyof FileStat) => {
+    if (sortKey === key) {
+      if (sortType === 1) {
+        setSortType(-1);
+      } else {
+        setSortKey(undefined);
+      }
+    } else {
+      setSortType(1);
+      setSortKey(key);
+    }
+  }
+
+  useEffect(() => {
+    setAnimationClass(false);
+    window.setTimeout(() => {
+      setAnimationClass(true);
+    });
+  }, [currentDir]);
+
+  return <div className={classnames(style['file-list'], { [style['ease-in']]: animationClass })}>
     <div className={style['file-head']}>
-      <div>文件名</div>
-      <div>创建时间</div>
-      <div>大小</div>
+      <div onClick={() => setSort('name')}>
+        文件名
+        {sortKey === 'name' && <span className={classnames(style['sort-icon'], { [style['revert-icon']]: sortType === -1 })}>&gt;</span>}
+      </div>
+      <div onClick={() => setSort('created')}>
+        创建时间
+        {sortKey === 'created' && <span className={classnames(style['sort-icon'], { [style['revert-icon']]: sortType === -1 })}>&gt;</span>}
+      </div>
+      <div onClick={() => setSort('size')}>
+        大小
+        {sortKey === 'size' && <span className={classnames(style['sort-icon'], { [style['revert-icon']]: sortType === -1 })}>&gt;</span>}
+      </div>
     </div>
     <div>
       {
-        files.map(file => {
+        copiedFiles.map(file => {
           return <div
             className={style['file-item']}
             key={file.name}
@@ -125,7 +168,7 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
               {moment.unix(file.created / 1000 >> 0).format('YYYY/MM/DD')}
             </div>
             <div>
-              {formatFileSize(file.size)}
+              {file.is_file ? formatFileSize(file.size) : '-'}
             </div>
           </div>
         })

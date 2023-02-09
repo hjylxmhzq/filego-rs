@@ -160,7 +160,7 @@ fn init() -> AppState {
 }
 
 fn connect_db() -> SqliteConnection {
-  let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+  let database_url = env::var("DATABASE_URL").unwrap_or("sqlite://./app.db".to_owned());
   let mut conn =
     SqliteConnection::establish(&database_url).expect("can not establish database connection");
   println!("database is connected");
