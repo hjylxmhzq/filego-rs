@@ -33,7 +33,7 @@ export default function FilePage() {
   };
 
   const setPreviewing = (file: FileStat) => {
-    history('/', { state: { previewing: file } })
+    history('/', { state: { previewing: file, currentDir } });
   }
 
   useEffect(() => {
@@ -64,6 +64,7 @@ export default function FilePage() {
     }
   };
 
+  console.log(currentDir);
   const currentPath = previewing ? path.join(currentDir, previewing.name) : currentDir;
 
   return <div className={style['file-page']}>
