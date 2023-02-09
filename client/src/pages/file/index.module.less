@@ -4,6 +4,9 @@
 }
 
 .breadcumb {
+  max-width: 900px;
+  white-space: nowrap;
+  overflow: auto;
   margin-bottom: 10px;
 }
 
@@ -95,7 +98,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
-  word-break: break-all;
+  white-space: nowrap;
 
   &:hover {
     background-color: #eee;
@@ -191,6 +194,7 @@
     transform: translateX(-30px);
     opacity: 0;
   }
+
   to {
     opacity: 1;
     transform: translateX(0px);

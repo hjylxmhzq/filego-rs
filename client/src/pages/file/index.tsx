@@ -66,7 +66,7 @@ function Breadcumb({ onJumpPath, currentPath }: { onJumpPath: (p: string) => voi
         const cur_path = acc;
         return <React.Fragment key={cur_path}>
           <span className={style['breadcumb-item-sep']}>/</span>
-          <span className={style['breadcumb-item']} key={cur_path} onClick={() => {
+          <span title={p} className={style['breadcumb-item']} key={cur_path} onClick={() => {
             onJumpPath(cur_path);
           }}>
             {p}
@@ -127,7 +127,7 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
     window.setTimeout(() => {
       setAnimationClass(true);
     });
-  }, [currentDir]);
+  }, [files]);
 
   return <div className={classnames(style['file-list'], { [style['ease-in']]: animationClass })}>
     <div className={style['file-head']}>
