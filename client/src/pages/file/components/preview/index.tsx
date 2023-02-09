@@ -16,5 +16,5 @@ export default function Preview({ file, dir }: { file: FileStat, dir: string }) 
   } else {
     inner = <div></div>
   }
-  return <div style={{ border: '1px solid #ccc', minHeight: 200 }}>{inner}</div>
+  return <div style={{ minHeight: 200 }}>{inner}</div>
 }

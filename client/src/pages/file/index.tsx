@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { create_download_link, delete_file, FileStat, read_dir } from "../../apis/file";
 import path from 'path-browserify';
 import style from './index.module.less';
@@ -9,30 +9,57 @@ import LoadingBar from "./components/loading-bar";
 import moment from 'moment';
 import { formatFileSize } from "../../utils/formatter";
 import classnames from 'classnames';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function FilePage() {
   let [files, setFiles] = useState<any[]>([]);
-  let [currentDir, setCurrentDir] = useState('');
   const [signal, reloadFiles] = useRefresh();
-  let [previewing, setPreviewing] = useState<FileStat>();
   let [isLoading, setIsLoading] = useState(false);
+
+  const location = useLocation();
+  const currentDir = location.state?.currentDir || '';
+  const previewing = location.state?.previewing;
+  const history = useNavigate();
+
+  const gotoDir = (dir: string = currentDir) => {
+    history('/', { state: { currentDir: dir } });
+  };
+
+  const reload = async (dir: string = currentDir) => {
+    setIsLoading(true);
+    let data = await read_dir(dir);
+    setIsLoading(false);
+    setFiles(data);
+  };
+
+  const setPreviewing = (file: FileStat) => {
+    history('/', { state: { previewing: file } })
+  }
+
+  useEffect(() => {
+    gotoDir('');
+  }, []);
+
+  useEffect(() => {
+    reload();
+  }, [signal]);
 
   useEffect(() => {
     (async () => {
-      setIsLoading(true);
-      let data = await read_dir(currentDir);
-      setIsLoading(false);
-      setFiles(data);
+      const state = location.state;
+      if (state && state.currentDir !== undefined) {
+        await reload(state.currentDir);
+      }
     })();
-  }, [currentDir, signal]);
+  }, [location]);
 
   const onClickFile = (file: FileStat) => {
     if (file.is_dir) {
-      setCurrentDir(path.join(currentDir, file.name));
+      gotoDir(path.join(currentDir, file.name));
     } else {
       setPreviewing(file);
     }
-  }
+  };
 
   const currentPath = previewing ? path.join(currentDir, previewing.name) : currentDir;
 
@@ -41,15 +68,15 @@ export default function FilePage() {
       !previewing ?
         <div>
           <LoadingBar loading={isLoading} />
-          <Breadcumb onJumpPath={(p) => setCurrentDir(p)} currentPath={currentPath} />
+          <Breadcumb onJumpPath={(p) => gotoDir(p)} currentPath={currentPath} />
           {
             files.length ?
               <FileList onReload={reloadFiles} files={files} currentDir={currentDir} onClickFile={onClickFile} />
               : <EmptyList />
           }
         </div>
-        : <div>
-          <div className={style['preview-title-bar']}><span>{previewing.name}</span><span style={{ cursor: 'pointer' }} onClick={() => setPreviewing(undefined)}>X</span></div>
+        : <div className={style['preview']}>
+          <div className={style['preview-title-bar']}><span>{previewing.name}</span><span style={{ cursor: 'pointer' }} onClick={() => gotoDir()}>X</span></div>
           <Preview file={previewing} dir={currentDir} />
         </div>
     }
@@ -124,12 +151,12 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
 
   useEffect(() => {
     setAnimationClass(false);
-    window.setTimeout(() => {
+    requestAnimationFrame(() => {
       setAnimationClass(true);
     });
   }, [files]);
 
-  return <div className={classnames(style['file-list'], { [style['ease-in']]: animationClass })}>
+  return <div className={classnames(style['file-list'], style['fade-in-start'], { [style['ease-in']]: animationClass })}>
     <div className={style['file-head']}>
       <div onClick={() => setSort('name')}>
         文件名

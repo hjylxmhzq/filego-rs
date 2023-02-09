@@ -26,7 +26,6 @@ export function Popover(props: Props) {
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const rect1 = contentEl.getBoundingClientRect();
-      console.log(el, rect, rect1);
       setRect({ left: rect.right - rect1.width, top: rect.top + rect.height + 3 });
     }
   }, [isShow, props.content, props.children]);
