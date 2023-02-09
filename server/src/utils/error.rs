@@ -1,4 +1,4 @@
-use std::{fmt::Display, time::SystemTimeError};
+use std::{fmt::Display, time::SystemTimeError, convert::Infallible};
 
 use actix_session::{SessionInsertError, SessionGetError};
 use actix_web::{http::StatusCode, ResponseError, error::BlockingError};
@@ -27,6 +27,13 @@ impl Display for AppError {
 
 impl From<diesel::result::Error> for AppError {
   fn from(e: diesel::result::Error) -> Self {
+    let msg = e.to_string();
+    Self { msg }
+  }
+}
+
+impl From<Infallible> for AppError {
+  fn from(e: Infallible) -> Self {
     let msg = e.to_string();
     Self { msg }
   }

@@ -32,6 +32,13 @@ export function create_download_link(dir: string, file: string) {
   return url.toString();
 }
 
+export function create_compression_download_link(dir: string, file: string) {
+  const url = new URL('/file/read_compression', window.location.origin);
+  const file_path = path.join(dir, file);
+  url.searchParams.set('file', file_path);
+  return url.toString();
+}
+
 export async function read_text_file(dir: string, file: string) {
   const url = new URL('/file/read', window.location.origin);
   const file_path = path.join(dir, file);

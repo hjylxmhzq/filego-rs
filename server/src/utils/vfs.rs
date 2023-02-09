@@ -1,11 +1,14 @@
 use actix_web::body::SizedStream;
+use async_zip::{ZipEntryBuilder, Compression};
+use async_zip::write::ZipFileWriter;
 use serde::Serialize;
 use std::io::Cursor;
 use std::path::Path;
+use std::str::FromStr;
 use std::time::UNIX_EPOCH;
 use std::{fs::Metadata, io, path::PathBuf};
 use tokio::fs::{self, File};
-use tokio::io::AsyncSeekExt;
+use tokio::io::{AsyncSeekExt, DuplexStream, duplex};
 use tokio_util::io::ReaderStream;
 
 use super::error::AppError;
@@ -148,6 +151,16 @@ pub async fn read_file_stream(
   Ok(reader)
 }
 
+pub async fn read_to_zip_stream(
+  file_root: PathBuf,
+  user_root: String,
+  file: String,
+) -> Result<ReaderStream<DuplexStream>, AppError> {
+  let f = zip_path_to_stream(&file_root.join(user_root), &PathBuf::from_str(&file)?).await?;
+  let reader = ReaderStream::new(f);
+  Ok(reader)
+}
+
 fn normailze_path(file_root: &PathBuf, user_root: &str, file: &str) -> PathBuf {
   let user_abs_root = file_root.join(user_root);
   let mut file = file;
@@ -155,4 +168,43 @@ fn normailze_path(file_root: &PathBuf, user_root: &str, file: &str) -> PathBuf {
     file = &file[1..];
   }
   user_abs_root.join(file)
+}
+
+
+pub async fn zip_path_to_stream(
+  base: &PathBuf,
+  file: &PathBuf,
+) -> Result<DuplexStream, std::io::Error> {
+  #[async_recursion::async_recursion]
+  async fn walk(
+    base: &PathBuf,
+    file: &PathBuf,
+    writer: &mut ZipFileWriter<DuplexStream>,
+  ) -> Result<(), std::io::Error> {
+    let meta = tokio::fs::metadata(base.join(file)).await?;
+    if meta.is_file() {
+      let s = file.to_str().unwrap().to_string();
+      #[cfg(debug_assertions)]
+      println!("zip add entry: {s}");
+      let entry = ZipEntryBuilder::new(s, Compression::Stored).build();
+      let mut w = writer.write_entry_stream(entry).await.unwrap();
+      let mut f = tokio::fs::File::open(base.join(file)).await?;
+      tokio::io::copy(&mut f, &mut w).await?;
+      w.close().await.unwrap();
+    } else if meta.is_dir() {
+      let mut files = tokio::fs::read_dir(base.join(file)).await?;
+      while let Ok(Some(inner_file)) = files.next_entry().await {
+        let filename = inner_file.file_name();
+        walk(&base, &file.join(filename), writer).await?;
+      }
+    }
+    Ok(())
+  }
+
+  let (w, r) = duplex(1000000);
+
+  let mut writer = ZipFileWriter::new(w);
+  walk(base, file, &mut writer).await?;
+
+  Ok(r)
 }

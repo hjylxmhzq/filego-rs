@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { create_download_link, delete_file, FileStat, read_dir } from "../../apis/file";
+import React, { useEffect, useMemo, useState } from "react"
+import { create_compression_download_link, create_download_link, delete_file, FileStat, read_dir } from "../../apis/file";
 import path from 'path-browserify';
 import style from './index.module.less';
 import Preview from "./components/preview";
@@ -38,10 +38,12 @@ export default function FilePage() {
 
   useEffect(() => {
     gotoDir('');
+// eslint-disable-next-line
   }, []);
 
   useEffect(() => {
     reload();
+// eslint-disable-next-line
   }, [signal]);
 
   useEffect(() => {
@@ -51,6 +53,7 @@ export default function FilePage() {
         await reload(state.currentDir);
       }
     })();
+// eslint-disable-next-line
   }, [location]);
 
   const onClickFile = (file: FileStat) => {
@@ -80,7 +83,7 @@ export default function FilePage() {
           <Preview file={previewing} dir={currentDir} />
         </div>
     }
-  </div >
+  </div>
 }
 
 function Breadcumb({ onJumpPath, currentPath }: { onJumpPath: (p: string) => void, currentPath: string }) {
@@ -111,15 +114,23 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
       <DeleteBtn dir={currentDir} file={file} onDeleteFinish={onReload} />
     </div>
     {
-      file.is_file &&
-      <a
-        className={style['action-btn']}
-        download={file.name}
-        target="_blank"
-        rel="noreferrer"
-        href={create_download_link(currentDir, file.name)}>
-        下载
-      </a>
+      file.is_file ?
+        <a
+          className={style['action-btn']}
+          download={file.name}
+          target="_blank"
+          rel="noreferrer"
+          href={create_download_link(currentDir, file.name)}>
+          下载
+        </a>
+        : <a
+          className={style['action-btn']}
+          download={file.name}
+          target="_blank"
+          rel="noreferrer"
+          href={create_compression_download_link(currentDir, file.name)}>
+          下载Zip
+        </a>
     }
   </div>;
 
