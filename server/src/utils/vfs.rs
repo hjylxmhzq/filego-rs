@@ -201,7 +201,7 @@ pub async fn zip_path_to_stream(
     Ok(())
   }
 
-  let (w, r) = duplex(1000000);
+  let (w, r) = duplex(512);
 
   let mut writer = ZipFileWriter::new(w);
   walk(base, file, &mut writer).await?;
