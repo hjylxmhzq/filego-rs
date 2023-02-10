@@ -203,8 +203,12 @@ pub async fn zip_path_to_stream(
 
   let (w, r) = duplex(512);
 
-  let mut writer = ZipFileWriter::new(w);
-  walk(base, file, &mut writer).await?;
+  let base = base.clone();
+  let file = file.clone();
+  tokio::spawn(async move {
+    let mut writer = ZipFileWriter::new(w);
+    walk(&base, &file, &mut writer).await.unwrap();
+  });
 
   Ok(r)
 }
