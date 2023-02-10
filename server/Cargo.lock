@@ -1958,6 +1958,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "futures",
+ "futures-util",
  "image",
  "include_dir",
  "lazy_static",

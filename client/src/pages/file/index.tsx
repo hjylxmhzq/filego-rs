@@ -88,7 +88,11 @@ export default function FilePage() {
             <Breadcumb onJumpPath={(p) => gotoDir(p)} currentPath={currentPath} />
             <div className={style['header-actions']}>
               <Button onClick={async () => {
-                await upload(currentDir, { onUploadProgress });
+                try {
+                  await upload(currentDir, { onUploadProgress });
+                } catch (_) {
+                  console.error('upload error');
+                }
                 setProgress({ total: 0, uploaded: 0 });
                 reloadFiles();
               }}>上传</Button>

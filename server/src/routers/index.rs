@@ -1,7 +1,6 @@
-use actix_files::NamedFile;
-use actix_web::{web, Scope};
+use actix_web::{web, Scope, HttpResponse};
 
-use crate::{utils::error::AppError, AppData};
+use crate::{utils::error::AppError, middlewares::static_server::get_file};
 
 pub fn index_routers() -> Scope {
   web::scope("")
@@ -9,7 +8,7 @@ pub fn index_routers() -> Scope {
     .route("/login", web::get().to(index))
 }
 
-pub async fn index(state: web::Data<AppData>) -> Result<NamedFile, AppError> {
-  let static_root = state.read().unwrap().config.static_root.clone();
-  Ok(NamedFile::open(static_root.join("index.html"))?)
+pub async fn index() -> Result<HttpResponse, AppError> {
+  let content = get_file("index.html").ok_or(AppError::new("can not find index.html"))?;
+  Ok(HttpResponse::Ok().body(content))
 }

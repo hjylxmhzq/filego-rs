@@ -1,4 +1,4 @@
 cd client
 yarn
-yarn build:prod
+yarn build
 cd ..

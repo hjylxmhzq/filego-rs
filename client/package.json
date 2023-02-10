@@ -74,10 +74,8 @@
   "scripts": {
     "start": "node scripts/start.js",
     "build": "BUILD_PATH='../server/static' node scripts/build.js",
-    "build:prod": "BUILD_PATH='../dist/static' node scripts/build.js",
     "test": "node scripts/test.js"
   },
-  "homepage": "/static",
   "eslintConfig": {
     "extends": [
       "react-app",
