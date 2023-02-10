@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react"
-import { create_compression_download_link, create_download_link, delete_file, FileStat, read_dir, upload } from "../../apis/file";
+import React, { forwardRef, useEffect, useMemo, useRef, useState } from "react"
+import { create_compression_download_link, create_dir, create_download_link, delete_file, FileStat, read_dir, upload } from "../../apis/file";
 import path from 'path-browserify';
 import style from './index.module.less';
 import Preview from "./components/preview";
@@ -13,12 +13,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Button from "../../components/button";
 import { UploadProgress } from "../../components/progress";
 import { AxiosProgressEvent } from "axios";
+import Modal from "../../components/modal";
 
 export default function FilePage() {
   let [files, setFiles] = useState<any[]>([]);
   const [signal, reloadFiles] = useRefresh();
   let [isLoading, setIsLoading] = useState(false);
   let [progress, setProgress] = useState({ total: 0, uploaded: 0 });
+  const modalRef = useRef<{ show: () => Promise<string> }>(null);
 
   const location = useLocation();
   const currentDir = location.state?.currentDir || '';
@@ -78,7 +80,18 @@ export default function FilePage() {
     // eslint-disable-next-line
   }, [files, currentDir]);
 
+  const showAddFolder = () => {
+    if (modalRef.current) {
+      modalRef.current.show();
+    }
+  }
+  const onAddFolderFinished = async (folder: string) => {
+    await create_dir(currentDir, folder);
+    reloadFiles();
+  };
+
   return <div className={style['file-page']}>
+    <AddFolderModal ref={modalRef} onFinished={onAddFolderFinished} />
     {
       !previewing ?
         <div>
@@ -87,6 +100,9 @@ export default function FilePage() {
           <div className={style['header-bar']}>
             <Breadcumb onJumpPath={(p) => gotoDir(p)} currentPath={currentPath} />
             <div className={style['header-actions']}>
+              <Button onClick={async () => {
+                showAddFolder();
+              }}>新建文件夹</Button>
               <Button onClick={async () => {
                 try {
                   await upload(currentDir, { onUploadProgress });
@@ -133,6 +149,46 @@ function Breadcumb({ onJumpPath, currentPath }: { onJumpPath: (p: string) => voi
   </div>
 }
 
+const AddFolderModal = forwardRef<{ show: () => void }, { onFinished?: (folder: string) => void }>((props, ref) => {
+
+  const [show, setShow] = useState(false);
+  if (ref && typeof ref === 'function') {
+    ref({ show: () => setShow(true) })
+  } else if (ref) {
+    ref.current = {
+      show: async () => {
+        setShow(true);
+      }
+    };
+  }
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (show && inputRef.current) {
+      let el = inputRef.current;
+      el.focus();
+      el.select();
+    }
+  }, [show]);
+
+
+  const [newName, setNewName] = useState('未命名文件夹');
+  return <Modal mask show={show}>
+    <div>
+      <div className={style['modal-title']}>新建文件夹</div>
+      <input ref={inputRef} className={style['text-input']} type='text' value={newName} onChange={(e) => setNewName(e.target.value)}></input>
+      <Button onClick={() => {
+        setShow(false);
+        props.onFinished?.(newName);
+      }}>确定</Button>
+      <Button onClick={() => {
+        setShow(false);
+      }}>取消</Button>
+    </div>
+  </Modal>
+});
+
 function FileList({ files, onClickFile, currentDir, onReload }: { files: FileStat[], onClickFile: (file: FileStat) => void, currentDir: string, onReload: () => void }) {
 
   const actionsMenu = (file: FileStat) => <div className={style['action-menu']}>
@@ -171,7 +227,7 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
     });
   }
 
-  const [animationClass, setAnimationClass] = useState(true);
+  const [animationClass, setAnimationClass] = useState<'left' | 'right' | 'right1' | 'left1'>('left');
 
   const setSort = (key?: keyof FileStat) => {
     if (sortKey === key) {
@@ -186,14 +242,27 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
     }
   }
 
-  useEffect(() => {
-    setAnimationClass(false);
-    requestAnimationFrame(() => {
-      setAnimationClass(true);
-    });
-  }, [files]);
+  const lastDir = useRef(currentDir);
 
-  return <div className={classnames(style['file-list'], style['fade-in-start'], { [style['ease-in']]: animationClass })}>
+  useEffect(() => {
+    if (currentDir.length > lastDir.current.length) {
+      if (animationClass === 'right') {
+        setAnimationClass('right1');
+      } else {
+        setAnimationClass('right');
+      }
+    } else {
+      if (animationClass === 'left') {
+        setAnimationClass('left1');
+      } else {
+        setAnimationClass('left');
+      }
+    }
+    lastDir.current = currentDir;
+    // eslint-disable-next-line
+  }, [currentDir]);
+
+  return <div className={classnames(style['file-list'], style['fade-in-start'], style['ease-in-' + animationClass])}>
     <div className={style['file-head']}>
       <div onClick={() => setSort('name')}>
         文件名
@@ -257,15 +326,19 @@ function DeleteBtn({ dir, file, onDeleteFinish }: { dir: string, file: FileStat,
   }, []);
 
   const comfirmContent = <div onClick={e => e.stopPropagation()} className={style['comfirm-content']}>
-    Comfirm to delete<button onClick={async () => {
-      await delete_file(dir, file.name);
-      onDeleteFinish();
-      setShowDeleteComfirm(false);
-    }}>OK</button>
+    <span className={style['comfirm-content-text']}>确认删除 <strong>{file.name}</strong></span>
+    <Button
+      height={25}
+      onClick={async () => {
+        await delete_file(dir, file.name);
+        onDeleteFinish();
+        setShowDeleteComfirm(false);
+      }}>OK</Button>
   </div>;
 
   return <Popover content={comfirmContent} show={showDeleteComfirm}>
     <span
+      style={{ width: '100%', display: 'block' }}
       className={style['action-btn']}
       onClick={(e) => {
         e.stopPropagation();

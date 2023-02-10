@@ -1,3 +1,5 @@
+@import '../../theme.less';
+
 .file-page {
   text-align: left;
   margin: 50px 100px;
@@ -55,6 +57,7 @@
       color: #333;
       border-radius: 3px;
       line-height: 16px;
+      display: block;
       cursor: pointer;
 
       &:hover {
@@ -64,9 +67,26 @@
   }
 }
 
+.header-actions {
+  font-size: 14px;
+  &>button {
+    margin: 0 5px;
+    box-shadow: @box-shadow;
+  }
+}
+
 .comfirm-content {
   margin: 3px 10px;
-  font-size: 14px;
+  font-size: 12px;
+  
+  .comfirm-content-text {
+    display: inline-block;
+    white-space: nowrap;
+    vertical-align: middle;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   button {
     transition: all 0.2s;
@@ -104,6 +124,8 @@
   vertical-align: middle;
   white-space: nowrap;
   border-radius: 3px;
+  font-size: 14px;
+  line-height: 20px;
 
   &:hover {
     background-color: #eee;
@@ -126,10 +148,6 @@
   border-radius: 5px;
   padding: 5px;
   transform: translateX(-20px);
-}
-
-.ease-in {
-  animation: fade-in 0.3s 1 ease-out forwards;
 }
 
 .file-head {
@@ -213,9 +231,77 @@
     transform: translateX(0px);
   }
 }
+@keyframes fade-in1 {
+  from {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0px);
+  }
+}
+@keyframes fade-in-right1 {
+  from {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0px);
+  }
+}
+@keyframes fade-in-right {
+  from {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0px);
+  }
+}
+
+.ease-in-left {
+  animation: fade-in 0.3s 1 ease-out forwards;
+}
+
+.ease-in-left1 {
+  animation: fade-in1 0.3s 1 ease-out forwards;
+}
+
+.ease-in-right {
+  animation: fade-in-right 0.3s 1 ease-out forwards;
+}
+
+.ease-in-right1 {
+  animation: fade-in-right1 0.3s 1 ease-out forwards;
+}
 
 .preview {
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12);
   border-radius: 5px;
   overflow: hidden;
+}
+
+.text-input {
+  border: 1px solid #aaa;
+  outline: none;
+  height: 25px;
+  width: 200px;
+  margin: 5px 10px;
+  color: #333;
+  & ~ button {
+    margin: 0 3px;
+  }
+}
+
+.modal-title {
+  text-align: center;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #666;
 }

@@ -26,6 +26,13 @@ export async function delete_file(dir: string, file: string): Promise<boolean> {
   return resp.status === 0;
 }
 
+export async function create_dir(dir: string, file: string): Promise<boolean> {
+  let resp = await post('/file/create_dir', {
+    file: path.join(dir, file)
+  });
+  return resp.status === 0;
+}
+
 export function create_download_link(dir: string, file: string) {
   const url = new URL('/file/read', window.location.origin);
   const file_path = path.join(dir, file);

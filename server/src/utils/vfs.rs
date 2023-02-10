@@ -83,6 +83,12 @@ pub async fn delete(file_root: PathBuf, user_root: String, file: String) -> Resu
   Ok(())
 }
 
+pub async fn create_dir(file_root: PathBuf, user_root: String, file: String) -> Result<(), AppError> {
+  let dir = normailze_path(&file_root, &user_root, &file);
+  let result = fs::create_dir(dir).await?;
+  Ok(result)
+}
+
 #[derive(Serialize)]
 #[mixin::declare]
 pub struct FileStat {

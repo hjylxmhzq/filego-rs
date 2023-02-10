@@ -1,5 +1,5 @@
 import React from 'react';
-import './App.css';
+import './App.less';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import routers from './routers';
 

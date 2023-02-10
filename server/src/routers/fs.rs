@@ -75,6 +75,14 @@ pub async fn fs_actions(
       Ok(create_resp(true, resp, ""))
     }
 
+    "create_dir" => {
+      vfs::create_dir(file_root.clone(), user_root.clone(), file.to_owned())
+        .await
+        .unwrap();
+
+      Ok(create_resp(true, EmptyResponseData::new(), ""))
+    }
+
     "read_compression" => {
       let stream = read_to_zip_stream(file_root.clone(), user_root.clone(), file.to_string()).await?;
       let resp = create_unsized_stream_resp(stream, Some("application/zip".to_string()), Some(&(file.to_string() + ".zip")));
