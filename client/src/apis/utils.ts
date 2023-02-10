@@ -1,4 +1,6 @@
-interface Response {
+import axios, { AxiosProgressEvent } from 'axios';
+
+export interface Response {
   status: 0 | 1,
   data: any,
   message: string,
@@ -38,4 +40,9 @@ export async function post_raw(api: string, body: any, tag: string = 'default') 
     handlers.splice(idx, 1);
   }
   return resp;
+}
+
+export async function post_formdata(api: string, body: FormData, onUploadProgress?: (e: AxiosProgressEvent) => void) {
+  let resp = await axios.postForm(api, body, { responseType: 'json', onUploadProgress });
+  return resp.data;
 }

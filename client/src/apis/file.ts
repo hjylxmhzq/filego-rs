@@ -1,5 +1,6 @@
+import { AxiosProgressEvent } from "axios";
 import path from "path-browserify";
-import { post, post_raw } from "./utils";
+import { post, post_formdata, post_raw, Response } from "./utils";
 
 export interface FileStat {
   name: string;
@@ -45,4 +46,32 @@ export async function read_text_file(dir: string, file: string) {
   let resp = await post_raw(url.toString(), { file: file_path });
   let content = await resp.text();
   return content;
+}
+
+export async function upload_file(dir: string, filename: string, file: File, config?: { onUploadProgress?: (e: AxiosProgressEvent) => void }) {
+  const url = new URL('/file/upload', window.location.origin);
+  const file_path = path.join(dir, filename);
+  const form = new FormData();
+  form.append('filename', file_path);
+  form.append('file', file, filename);
+  let resp = await post_formdata(url.toString(), form, config?.onUploadProgress);
+  return resp;
+}
+
+export async function upload(dir: string, config?: { onUploadProgress: (e: AxiosProgressEvent) => void }): Promise<Response> {
+  const input = document.createElement('input');
+  input.setAttribute('type', 'file');
+  input.style.display = 'none';
+  document.body.appendChild(input);
+  return new Promise((resolve, reject) => {
+    input.addEventListener('change', async () => {
+      let file = input.files?.item(0);
+      if (file) {
+        let resp = await upload_file(dir, file.name, file, config);
+        resolve(resp);
+      }
+    }, false);
+    input.click();
+    document.body.removeChild(input);
+  });
 }

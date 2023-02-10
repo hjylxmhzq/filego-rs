@@ -4,10 +4,10 @@
 }
 
 .breadcumb {
-  max-width: 900px;
   white-space: nowrap;
   overflow: auto;
   margin-bottom: 10px;
+  flex: 1 1 900px;
 }
 
 .file-item {
@@ -89,6 +89,10 @@
   align-items: center;
 }
 
+.header-bar {
+  display: flex;
+}
+
 .breadcumb-item {
   display: inline-block;
   cursor: pointer;
@@ -99,6 +103,7 @@
   text-overflow: ellipsis;
   vertical-align: middle;
   white-space: nowrap;
+  border-radius: 3px;
 
   &:hover {
     background-color: #eee;

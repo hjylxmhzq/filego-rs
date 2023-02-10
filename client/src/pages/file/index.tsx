@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react"
-import { create_compression_download_link, create_download_link, delete_file, FileStat, read_dir } from "../../apis/file";
+import { create_compression_download_link, create_download_link, delete_file, FileStat, read_dir, upload } from "../../apis/file";
 import path from 'path-browserify';
 import style from './index.module.less';
 import Preview from "./components/preview";
@@ -10,11 +10,15 @@ import moment from 'moment';
 import { formatFileSize } from "../../utils/formatter";
 import classnames from 'classnames';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Button from "../../components/button";
+import { UploadProgress } from "../../components/progress";
+import { AxiosProgressEvent } from "axios";
 
 export default function FilePage() {
   let [files, setFiles] = useState<any[]>([]);
   const [signal, reloadFiles] = useRefresh();
   let [isLoading, setIsLoading] = useState(false);
+  let [progress, setProgress] = useState({ total: 0, uploaded: 0 });
 
   const location = useLocation();
   const currentDir = location.state?.currentDir || '';
@@ -38,12 +42,12 @@ export default function FilePage() {
 
   useEffect(() => {
     gotoDir('');
-// eslint-disable-next-line
+    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
     reload();
-// eslint-disable-next-line
+    // eslint-disable-next-line
   }, [signal]);
 
   useEffect(() => {
@@ -53,7 +57,7 @@ export default function FilePage() {
         await reload(state.currentDir);
       }
     })();
-// eslint-disable-next-line
+    // eslint-disable-next-line
   }, [location]);
 
   const onClickFile = (file: FileStat) => {
@@ -64,18 +68,35 @@ export default function FilePage() {
     }
   };
 
-  console.log(currentDir);
   const currentPath = previewing ? path.join(currentDir, previewing.name) : currentDir;
+  const onUploadProgress = (e: AxiosProgressEvent) => {
+    setProgress({ total: e.total || 0, uploaded: e.loaded })
+  };
+
+  const fileList = useMemo(() => {
+    return <FileList onReload={reloadFiles} files={files} currentDir={currentDir} onClickFile={onClickFile} />;
+    // eslint-disable-next-line
+  }, [files, currentDir]);
 
   return <div className={style['file-page']}>
     {
       !previewing ?
         <div>
+          {!!progress.total && <UploadProgress total={progress.total} uploaded={progress.uploaded} />}
           <LoadingBar loading={isLoading} />
-          <Breadcumb onJumpPath={(p) => gotoDir(p)} currentPath={currentPath} />
+          <div className={style['header-bar']}>
+            <Breadcumb onJumpPath={(p) => gotoDir(p)} currentPath={currentPath} />
+            <div className={style['header-actions']}>
+              <Button onClick={async () => {
+                await upload(currentDir, { onUploadProgress });
+                setProgress({ total: 0, uploaded: 0 });
+                reloadFiles();
+              }}>上传</Button>
+            </div>
+          </div>
           {
             files.length ?
-              <FileList onReload={reloadFiles} files={files} currentDir={currentDir} onClickFile={onClickFile} />
+              fileList
               : <EmptyList />
           }
         </div>
