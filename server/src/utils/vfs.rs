@@ -201,7 +201,7 @@ pub async fn zip_path_to_stream(
     Ok(())
   }
 
-  let (w, r) = duplex(512);
+  let (w, r) = duplex(512 * 1024);
 
   let base = base.clone();
   let file = file.clone();

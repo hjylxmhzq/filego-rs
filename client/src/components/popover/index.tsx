@@ -31,8 +31,16 @@ export function Popover(props: Props) {
   }, [isShow, props.content, props.children]);
 
   useEffect(() => {
-    const onClick = () => {
-      setIsShow(false);
+    const onClick = (e: MouseEvent) => {
+      let target = e.target as HTMLElement;
+      if (contentRef.current && ref.current) {
+        let contentEl = contentRef.current;
+        let el = ref.current;
+        if (contentEl.contains(target) || el.contains(target)) {
+          return;
+        }
+        setIsShow(false);
+      }
     };
     window.addEventListener('click', onClick, false);
     return () => {
@@ -42,7 +50,6 @@ export function Popover(props: Props) {
 
 
   const onClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
     if (props.auto) {
       setIsShow(true);
     }
