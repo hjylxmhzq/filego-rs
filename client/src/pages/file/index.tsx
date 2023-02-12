@@ -39,7 +39,7 @@ export default function FilePage() {
   };
 
   const setPreviewing = (file: FileStat) => {
-    history('/', { state: { previewing: file, currentDir } });
+    history('/', { state: { previewing: file, currentDir: currentDir } });
   }
 
   useEffect(() => {
@@ -120,10 +120,7 @@ export default function FilePage() {
               : <EmptyList />
           }
         </div>
-        : <div className={style['preview']}>
-          <div className={style['preview-title-bar']}><span>{previewing.name}</span><span style={{ cursor: 'pointer' }} onClick={() => gotoDir()}>X</span></div>
-          <Preview file={previewing} dir={currentDir} />
-        </div>
+        : <Preview file={previewing} files={files} dir={currentDir} onClose={() => gotoDir()} />
     }
   </div>
 }

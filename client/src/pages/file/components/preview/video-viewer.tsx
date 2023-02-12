@@ -1,5 +1,6 @@
 import Plyr, { PlyrSource } from "plyr-react"
 import "plyr-react/plyr.css"
+import style from './video-viewer.module.less';
 
 export default function VideoPreview({ src }: { src: string }) {
 
@@ -8,5 +9,5 @@ export default function VideoPreview({ src }: { src: string }) {
     options: { enabled: true }, // https://github.com/sampotts/plyr#options
     // Direct props for inner video tag (mdn.io/video)
   }
-  return <Plyr {...plyrProps} />;
+  return <div className={style.player}><Plyr {...plyrProps} /></div>;
 }

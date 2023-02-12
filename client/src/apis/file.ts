@@ -40,6 +40,14 @@ export function create_download_link(dir: string, file: string) {
   return url.toString();
 }
 
+export function create_thumbnail_link(dir: string, file: string) {
+  const url = new URL('/file/read_image', window.location.origin);
+  const file_path = path.join(dir, file);
+  url.searchParams.set('file', file_path);
+  url.searchParams.set('resize', '200');
+  return url.toString();
+}
+
 export function create_compression_download_link(dir: string, file: string) {
   const url = new URL('/file/read_compression', window.location.origin);
   const file_path = path.join(dir, file);

@@ -1,4 +1,5 @@
 use actix_web::body::SizedStream;
+use actix_web::web::block;
 use async_zip::write::ZipFileWriter;
 use async_zip::{Compression, ZipEntryBuilder};
 use serde::Serialize;
@@ -44,12 +45,18 @@ pub async fn read_image(
 
   let result = fs::read(dir).await?;
   if let Some(resize) = resize {
-    let img = image::io::Reader::new(Cursor::new(&result))
-      .with_guessed_format()?
-      .decode()?;
-    let img = img.thumbnail(resize, resize);
-    let mut buf = Vec::new();
-    img.write_to(&mut Cursor::new(&mut buf), image::ImageOutputFormat::Png);
+    let buf = block(move || {
+      let img = image::io::Reader::new(Cursor::new(&result))
+        .with_guessed_format()
+        .unwrap()
+        .decode()
+        .unwrap();
+      let img = img.thumbnail(resize, resize);
+      let mut buf = Vec::new();
+      img.write_to(&mut Cursor::new(&mut buf), image::ImageOutputFormat::Png);
+      buf
+    })
+    .await?;
     return Ok(buf);
   }
   Ok(result)
