@@ -1,6 +1,6 @@
 use actix_web::body::SizedStream;
-use async_zip::{ZipEntryBuilder, Compression};
 use async_zip::write::ZipFileWriter;
+use async_zip::{Compression, ZipEntryBuilder};
 use serde::Serialize;
 use std::io::Cursor;
 use std::path::Path;
@@ -8,10 +8,11 @@ use std::str::FromStr;
 use std::time::UNIX_EPOCH;
 use std::{fs::Metadata, io, path::PathBuf};
 use tokio::fs::{self, File};
-use tokio::io::{AsyncSeekExt, DuplexStream, duplex};
+use tokio::io::{duplex, AsyncSeekExt, DuplexStream};
 use tokio_util::io::ReaderStream;
 
 use super::error::AppError;
+use super::transform::ffmpeg_scale;
 
 pub async fn read_dir(
   file_root: PathBuf,
@@ -83,7 +84,25 @@ pub async fn delete(file_root: PathBuf, user_root: String, file: String) -> Resu
   Ok(())
 }
 
-pub async fn create_dir(file_root: PathBuf, user_root: String, file: String) -> Result<(), AppError> {
+pub async fn read_video_transform_stream(
+  file_root: PathBuf,
+  user_root: String,
+  file: String,
+  resize: Option<u32>,
+  bitrate: Option<u32>,
+) -> Result<DuplexStream, AppError> {
+  let dir = normailze_path(&file_root, &user_root, &file);
+  let resize = resize.map_or(720, |v| v);
+  let bitrate = bitrate.map_or(2000, |v| v);
+  let stream = ffmpeg_scale(&dir, resize, bitrate).await;
+  Ok(stream)
+}
+
+pub async fn create_dir(
+  file_root: PathBuf,
+  user_root: String,
+  file: String,
+) -> Result<(), AppError> {
   let dir = normailze_path(&file_root, &user_root, &file);
   let result = fs::create_dir(dir).await?;
   Ok(result)
@@ -175,7 +194,6 @@ fn normailze_path(file_root: &PathBuf, user_root: &str, file: &str) -> PathBuf {
   }
   user_abs_root.join(file)
 }
-
 
 pub async fn zip_path_to_stream(
   base: &PathBuf,

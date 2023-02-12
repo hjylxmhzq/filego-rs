@@ -260,7 +260,7 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
     }
     lastDir.current = currentDir;
     // eslint-disable-next-line
-  }, [currentDir]);
+  }, [files]);
 
   return <div className={classnames(style['file-list'], style['fade-in-start'], style['ease-in-' + animationClass])}>
     <div className={style['file-head']}>
