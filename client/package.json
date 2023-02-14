@@ -43,6 +43,7 @@
     "mini-css-extract-plugin": "^2.4.5",
     "moment": "^2.29.4",
     "path-browserify": "^1.0.1",
+    "pdfjs-dist": "^3.3.122",
     "plyr-react": "^5.1.2",
     "postcss": "^8.4.4",
     "postcss-flexbugs-fixes": "^5.0.2",
@@ -153,6 +154,8 @@
     ]
   },
   "devDependencies": {
-    "@types/path-browserify": "^1.0.0"
+    "@types/path-browserify": "^1.0.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "write-file-webpack-plugin": "^4.5.1"
   }
 }

@@ -4,7 +4,7 @@ import ImagePreview from './image-viewer';
 import TextPreview from './text-viewer';
 import VideoPreview from './video-viewer';
 import style from './index.module.less';
-import { useCallback, useState } from 'react';
+import { lazy, Suspense, useCallback, useState } from 'react';
 
 export default function Preview({ files, dir, file, onClose }: { files: FileStat[], dir: string, file: FileStat, onClose?: () => void }) {
   const [title, setTitle] = useState(file.name);
@@ -19,11 +19,22 @@ export default function Preview({ files, dir, file, onClose }: { files: FileStat
     inner = <TextPreview dir={dir} file={file} />
   } else if (guess?.includes('video')) {
     inner = <VideoPreview src={create_download_link(dir, file.name)} />
+  } else if (guess?.includes('pdf')) {
+    const Cmp = lazy(() => import('./pdf-viewer'))
+    inner = <Cmp dir={dir} file={file} />
+    // inner = <PdfViewer dir={dir} file={file} />
   } else {
     inner = <div></div>
   }
   return <div className={style['preview']}>
-    <div className={style['preview-title-bar']}><span style={{ height: 25, lineHeight: '25px' }}>{title}</span><span style={{ cursor: 'pointer' }} onClick={() => onClose?.()}>X</span></div>
-    <div style={{ minHeight: 200 }}>{inner}</div>
+    <div className={style['preview-title-bar']}>
+      <span style={{ height: 25, lineHeight: '25px' }}>{title}</span>
+      <span style={{ cursor: 'pointer' }} onClick={() => onClose?.()}>X</span>
+    </div>
+    <div style={{ minHeight: 200 }}>
+      <Suspense fallback={<div>Loading...</div>}>
+        {inner}
+      </Suspense>
+    </div>
   </div>
 }
