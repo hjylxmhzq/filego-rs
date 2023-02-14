@@ -100,7 +100,7 @@ pub async fn fs_actions(
 
     "read" => {
       let file_stat = vfs::stat(file_root.clone(), user_root.clone(), file).await?;
-      let (range_start, range_end, _) = parse_range(headers, file_stat.size)?;
+      let (range_start, range_end, is_range) = parse_range(headers, file_stat.size)?;
       let stream = read_file_stream(
         file_root.clone(),
         user_root.to_owned(),
@@ -118,6 +118,7 @@ pub async fn fs_actions(
           Some(file),
           (range_start, range_end),
           file_stat.size,
+          is_range,
         )
       } else {
         create_stream_resp(
@@ -126,6 +127,7 @@ pub async fn fs_actions(
           None,
           (range_start, range_end),
           file_stat.size,
+          is_range,
         )
       };
       Ok(resp)

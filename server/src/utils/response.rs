@@ -78,8 +78,9 @@ pub fn create_stream_resp(
   download_name: Option<&str>,
   range: (u64, u64),
   total_size: u64,
+  is_range: bool,
 ) -> HttpResponse {
-  let mut resp = if range.0 != 0 {
+  let mut resp = if is_range {
     HttpResponse::PartialContent()
   } else {
     HttpResponse::Ok()
@@ -91,12 +92,14 @@ pub fn create_stream_resp(
     ));
   }
   resp.append_header(("Accept-Ranges", "bytes"));
-  let l = range.0;
-  let r = if range.1 <= l { l } else { range.1 - 1 };
-  resp.append_header((
-    "Content-Range",
-    format!("bytes {}-{}/{}", l, r, total_size),
-  ));
+  if is_range {
+    let l = range.0;
+    let r = range.1;
+    resp.append_header((
+      "Content-Range",
+      format!("bytes {}-{}/{}", l, r, total_size),
+    ));
+  }
   resp.content_type(if let Some(mime) = mime_type {
     mime
   } else {

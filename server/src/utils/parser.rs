@@ -33,11 +33,11 @@ pub fn parse_range(headers: &HeaderMap, max_len: u64) -> Result<(u64, u64, bool)
           let s = s.parse::<u64>()?;
           return Ok((f, s, true));
         }
-        return Ok((f, max_len, true));
+        return Ok((f, max_len - 1, true));
       }
     }
   } else {
-    return Ok((0, max_len, false));
+    return Ok((0, max_len - 1, false));
   }
 }
 

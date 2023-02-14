@@ -180,7 +180,7 @@ pub async fn read_file_stream(
   let mut f = tokio::fs::File::open(dir).await?;
   f.seek(io::SeekFrom::Start(range.0)).await.unwrap();
   let reader = ReaderStream::new(f);
-  let reader = RangeStream::new(range.1 - range.0, reader);
+  let reader = RangeStream::new(range.1 - range.0 + 1, reader);
   Ok(reader)
 }
 
