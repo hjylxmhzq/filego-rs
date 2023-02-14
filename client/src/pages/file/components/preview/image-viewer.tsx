@@ -105,6 +105,20 @@ export default function ImagePreview({ dir, files, file, onPreviewingChange }: {
     }
   };
 
+  useEffect(() => {
+    if (!thumnailRef.current) return;
+    const el = thumnailRef.current;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const dy = e.deltaY;
+      el.scrollLeft += dy;
+    };
+    el.addEventListener('wheel', onWheel, false);
+    return () => {
+      el.removeEventListener('wheel', onWheel, false);
+    }
+  }, []);
+
   return <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }} ref={containerRef}>
     <img loading="lazy" style={{ maxWidth: '100%', height: '90vh', minHeight: 200 }} src={currentSrc} alt={currentSrc} />
     <div onClick={clickThumbnail} className={classNames({ [style['show']]: show }, style['image-thumbnails'], 'scrollbar')} ref={thumnailRef}>
