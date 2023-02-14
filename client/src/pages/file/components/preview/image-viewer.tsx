@@ -5,9 +5,13 @@ import { create_download_link, FileStat } from "../../../../apis/file";
 import style from './image-viewer.module.less';
 import { debounce } from "../../../../utils/common";
 
+function is_image(file: string) {
+  return file.toLowerCase().endsWith('.png') || file.toLowerCase().endsWith('.jpeg') || file.toLowerCase().endsWith('.jpg');
+}
+
 export default function ImagePreview({ dir, files, file, onPreviewingChange }: { dir: string, files: FileStat[], file: FileStat, onPreviewingChange?: (file: FileStat) => void }) {
 
-  const pics = useMemo(() => files.filter(file => file.name.endsWith('.png') || file.name.endsWith('.jpeg') || file.name.endsWith('.jpg')), [files]);
+  const pics = useMemo(() => files.filter(f => is_image(f.name)), [files]);
   const idx = useMemo(() => pics.findIndex(f => f.name === file.name), [pics, file]);
   const thumnailRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
