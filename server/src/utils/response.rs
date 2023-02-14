@@ -2,6 +2,9 @@ use actix_web::{body::SizedStream, HttpResponse};
 use serde::Serialize;
 use tokio::{fs::File, io::AsyncRead};
 use tokio_util::io::ReaderStream;
+use percent_encoding::{CONTROLS, AsciiSet};
+
+use super::stream::RangeStream;
 
 pub enum AppResponseStatus {
   Success = 0,
@@ -70,11 +73,11 @@ pub fn create_binary_resp(data: Vec<u8>, mime_type: Option<String>) -> HttpRespo
 }
 
 pub fn create_stream_resp(
-  stream: SizedStream<ReaderStream<File>>,
+  stream: RangeStream<ReaderStream<File>>,
   mime_type: Option<String>,
   download_name: Option<&str>,
   range: (u64, u64),
-  size: u64,
+  total_size: u64,
 ) -> HttpResponse {
   let mut resp = if range.0 != 0 {
     HttpResponse::PartialContent()
@@ -84,14 +87,15 @@ pub fn create_stream_resp(
   if let Some(download_name) = download_name {
     resp.append_header((
       "Content-Disposition",
-      format!(r#"attachment; filename="{download_name}""#),
+      format!(r#"attachment; filename*=UTF-8''{}"#, percent_encode(download_name)),
     ));
   }
   resp.append_header(("Accept-Ranges", "bytes"));
-  resp.append_header(("Content-Length", size.to_string()));
+  let l = range.0;
+  let r = if range.1 <= l { l } else { range.1 - 1 };
   resp.append_header((
     "Content-Range",
-    format!("bytes {}-{}/{}", range.0, range.1 - 1, size),
+    format!("bytes {}-{}/{}", l, r, total_size),
   ));
   resp.content_type(if let Some(mime) = mime_type {
     mime
@@ -119,4 +123,11 @@ pub fn create_unsized_stream_resp<T: AsyncRead + 'static>(
     "".to_owned()
   });
   resp.streaming(stream)
+}
+
+
+const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
+
+fn percent_encode(s: &str) -> String {
+  percent_encoding::utf8_percent_encode(s, FRAGMENT).to_string()
 }

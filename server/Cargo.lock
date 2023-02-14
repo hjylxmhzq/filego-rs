@@ -1964,6 +1964,8 @@ dependencies = [
  "lazy_static",
  "mime_guess",
  "mixin",
+ "percent-encoding",
+ "pin-project-lite",
  "regex",
  "serde",
  "serde_json",

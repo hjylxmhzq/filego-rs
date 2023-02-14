@@ -13,6 +13,7 @@ use tokio::io::{duplex, AsyncSeekExt, DuplexStream};
 use tokio_util::io::ReaderStream;
 
 use super::error::AppError;
+use super::stream::RangeStream;
 use super::transform::ffmpeg_scale;
 
 pub async fn read_dir(
@@ -174,12 +175,12 @@ pub async fn read_file_stream(
   user_root: String,
   file: String,
   range: (u64, u64),
-) -> Result<SizedStream<ReaderStream<File>>, AppError> {
+) -> Result<RangeStream<ReaderStream<File>>, AppError> {
   let dir = normailze_path(&file_root, &user_root, &file);
   let mut f = tokio::fs::File::open(dir).await?;
   f.seek(io::SeekFrom::Start(range.0)).await.unwrap();
   let reader = ReaderStream::new(f);
-  let reader = SizedStream::new(range.1 - range.0, reader);
+  let reader = RangeStream::new(range.1 - range.0, reader);
   Ok(reader)
 }
 
@@ -256,3 +257,38 @@ pub fn ensure_dir_sync(dir: impl Into<PathBuf>) -> Result<(), AppError> {
   let p: PathBuf = dir.into();
   Ok(std::fs::create_dir_all(p)?)
 }
+
+
+// impl<S, E> MessageBody for SizedStream<S>
+// where
+//     S: Stream<Item = Result<Bytes, E>>,
+//     E: Into<Box<dyn StdError>> + 'static,
+// {
+//     type Error = E;
+
+//     #[inline]
+//     fn size(&self) -> BodySize {
+//         BodySize::Sized(self.size)
+//     }
+
+//     /// Attempts to pull out the next value of the underlying [`Stream`].
+//     ///
+//     /// Empty values are skipped to prevent [`SizedStream`]'s transmission being
+//     /// ended on a zero-length chunk, but rather proceed until the underlying
+//     /// [`Stream`] ends.
+//     fn poll_next(
+//         mut self: Pin<&mut Self>,
+//         cx: &mut Context<'_>,
+//     ) -> Poll<Option<Result<Bytes, Self::Error>>> {
+//         loop {
+//             let stream = self.as_mut().project().stream;
+
+//             let chunk = match ready!(stream.poll_next(cx)) {
+//                 Some(Ok(ref bytes)) if bytes.is_empty() => continue,
+//                 val => val,
+//             };
+
+//             return Poll::Ready(chunk);
+//         }
+//     }
+// }
