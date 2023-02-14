@@ -193,6 +193,14 @@ pub async fn read_to_zip_stream(
   Ok(reader)
 }
 
+pub fn ensure_parent_dir_sync(file: &PathBuf) -> Result<(), AppError> {
+  let parent_dir = file.parent();
+  if let Some(parent_dir) = parent_dir {
+    std::fs::create_dir_all(parent_dir)?;
+  }
+  Ok(())
+}
+
 fn normailze_path(file_root: &PathBuf, user_root: &str, file: &str) -> PathBuf {
   let user_abs_root = file_root.join(user_root);
   let mut file = file;

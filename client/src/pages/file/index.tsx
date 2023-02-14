@@ -105,7 +105,7 @@ export default function FilePage() {
               }}>新建文件夹</Button>
               <Button onClick={async () => {
                 try {
-                  await upload(currentDir, { onUploadProgress });
+                  await upload(currentDir, { onUploadProgress, mulitple: true, directory: true });
                 } catch (_) {
                   console.error('upload error');
                 }

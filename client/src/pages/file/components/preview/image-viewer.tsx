@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { MouseEventHandler, useEffect, useMemo, useRef, useState } from "react";
+import { memo, MouseEventHandler, useEffect, useMemo, useRef, useState } from "react";
 import classnames from 'classnames';
 import { create_download_link, FileStat } from "../../../../apis/file";
 import style from './image-viewer.module.less';
@@ -7,18 +7,28 @@ import { debounce } from "../../../../utils/common";
 
 export default function ImagePreview({ dir, files, file, onPreviewingChange }: { dir: string, files: FileStat[], file: FileStat, onPreviewingChange?: (file: FileStat) => void }) {
 
-  const pics = useMemo(() => files.filter(file => file.name.endsWith('.png') || file.name.endsWith('.jpg')), [files]);
+  const pics = useMemo(() => files.filter(file => file.name.endsWith('.png') || file.name.endsWith('.jpeg') || file.name.endsWith('.jpg')), [files]);
   const idx = useMemo(() => pics.findIndex(f => f.name === file.name), [pics, file]);
   const thumnailRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [show, showThumbnail] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(idx);
+  const lastHighlightElRef = useRef<HTMLDivElement>();
+
+  const highlight = (el: HTMLDivElement) => {
+    el.classList.add(style['highlight']);
+    if (lastHighlightElRef.current) {
+      lastHighlightElRef.current.classList.remove(style['highlight']);
+    }
+    lastHighlightElRef.current = el;
+  }
+
   useEffect(() => {
     const scroll = (idx: number) => {
       if (!thumnailRef.current) return;
       const el = thumnailRef.current;
-      const t = el.querySelector(`[data-idx="${idx}"]`);
-      t?.scrollIntoView();
+      const t = el.querySelector(`[data-idx="${idx}"]`) as HTMLDivElement;
+      highlight(t);
     }
 
     const arrowPressed = (e: KeyboardEvent) => {
@@ -51,7 +61,7 @@ export default function ImagePreview({ dir, files, file, onPreviewingChange }: {
 
   useEffect(() => {
     let timer: number | undefined;
-    
+
     const onMove = (e: MouseEvent) => {
       let el = e.target as HTMLElement;
       if (!el.nodeType || el.nodeType !== document.ELEMENT_NODE) return;
@@ -80,21 +90,33 @@ export default function ImagePreview({ dir, files, file, onPreviewingChange }: {
 
   const currentSrc = create_download_link(dir, currentIdx === -1 ? file.name : pics[currentIdx].name);
   const clickThumbnail: MouseEventHandler<HTMLDivElement> = (e) => {
-    const el = e.currentTarget;
-    const idx = parseInt(el.dataset.idx || '0', 10);
-    setCurrentIdx(idx);
+    let el = e.target as HTMLDivElement | null;
+    while (el && !el?.dataset?.idx) {
+      el = el.parentElement as HTMLDivElement;
+    }
+    if (el?.dataset?.idx) {
+      const idx = parseInt(el.dataset.idx);
+      setCurrentIdx(idx);
+      highlight(el);
+    }
   };
 
   return <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }} ref={containerRef}>
     <img loading="lazy" style={{ maxWidth: '100%', height: '90vh', minHeight: 200 }} src={currentSrc} alt={currentSrc} />
-    <div className={classNames({ [style['show']]: show }, style['image-thumbnails'], 'scrollbar')} ref={thumnailRef}>
-      {
-        pics.map((p, idx) => {
-          return <div key={p.name} data-idx={idx} onClick={clickThumbnail} className={classnames(style.thumbnail, { [style['highlight']]: idx === currentIdx })}>
-            <img loading="lazy" src={create_download_link(dir, p.name)} alt=""></img>
-          </div>
-        })
-      }
+    <div onClick={clickThumbnail} className={classNames({ [style['show']]: show }, style['image-thumbnails'], 'scrollbar')} ref={thumnailRef}>
+      <Thumbnails pics={pics} dir={dir} />
     </div>
   </ div>
 }
+
+const Thumbnails = memo(({ pics, dir }: { pics: FileStat[], dir: string }) => {
+  return <>
+    {
+      pics.map((p, idx) => {
+        return <div key={p.name} data-idx={idx} className={classnames(style.thumbnail)}>
+          <img loading="lazy" src={create_download_link(dir, p.name)} alt=""></img>
+        </div>
+      })
+    }
+  </>
+});

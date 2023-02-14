@@ -81,11 +81,9 @@ async fn main() -> std::io::Result<()> {
 
   println!("server start on {addr:?}");
 
-  println!("{static_root:?}");
   HttpServer::new(move || {
     App::new()
       .app_data(web::Data::new(app_state.clone()))
-      // .service(actix_files::Files::new("/static", static_root.clone()))
       .service(routers::fs::file_routers())
       .service(routers::auth::auth_routers())
       .service(routers::index::index_routers())

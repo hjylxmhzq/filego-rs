@@ -1,16 +1,19 @@
-use std::borrow::Borrow;
 use crate::utils::error::AppError;
 use crate::utils::parser::parse_range;
-use crate::utils::response::{create_binary_resp, create_stream_resp, EmptyResponseData, create_unsized_stream_resp};
+use crate::utils::response::{
+  create_binary_resp, create_stream_resp, create_unsized_stream_resp, EmptyResponseData,
+};
 use crate::utils::session::SessionUtils;
-use crate::utils::vfs::{read_file_stream, FileStatWithName, read_to_zip_stream};
+use crate::utils::vfs::{
+  ensure_parent_dir_sync, read_file_stream, read_to_zip_stream, FileStatWithName,
+};
 use crate::utils::{response::create_resp, vfs};
 use crate::AppData;
 use actix_session::Session;
 use actix_web::{web, HttpRequest, HttpResponse, Scope};
 use serde::{Deserialize, Serialize};
+use std::borrow::Borrow;
 use tokio_util::io::ReaderStream;
-
 
 #[derive(Deserialize)]
 pub struct GetFilesOfDirReq {
@@ -85,8 +88,13 @@ pub async fn fs_actions(
     }
 
     "read_compression" => {
-      let stream = read_to_zip_stream(file_root.clone(), user_root.clone(), file.to_string()).await?;
-      let resp = create_unsized_stream_resp(stream, Some("application/zip".to_string()), Some(&(file.to_string() + ".zip")));
+      let stream =
+        read_to_zip_stream(file_root.clone(), user_root.clone(), file.to_string()).await?;
+      let resp = create_unsized_stream_resp(
+        stream,
+        Some("application/zip".to_string()),
+        Some(&(file.to_string() + ".zip")),
+      );
       Ok(resp)
     }
 
@@ -112,7 +120,13 @@ pub async fn fs_actions(
           range_end,
         )
       } else {
-        create_stream_resp(stream, mime, None, (range_start, file_stat.size), file_stat.size)
+        create_stream_resp(
+          stream,
+          mime,
+          None,
+          (range_start, file_stat.size),
+          file_stat.size,
+        )
       };
       Ok(resp)
     }
@@ -131,27 +145,24 @@ pub async fn fs_actions(
 }
 
 pub async fn upload(
-  mut parts: awmp::Parts,
+  parts: awmp::Parts,
   state: web::Data<AppData>,
   sess: Session,
 ) -> Result<HttpResponse, AppError> {
   let file_root = &state.read().unwrap().config.file_root;
   let user_root = &sess.get_user_root()?;
 
-  let query = parts.texts.as_pairs();
-  let mut filename = String::new();
-  for n in query {
-    if n.0 == "filename" {
-      filename = n.1.to_string();
-    }
-  }
-  if filename.is_empty() {
-    return Err(AppError::new("can not find filename in formdata"));
-  }
-  let dir = file_root.join(user_root).join(filename);
+  let file_root = file_root.clone();
+  let user_root = user_root.clone();
   web::block(move || -> Result<(), AppError> {
-    let f = parts.files.take("file").pop().ok_or(AppError::new(""))?;
-    f.persist_at(dir)?;
+    let files = parts.files.into_inner();
+    for (filename, file) in files {
+      if let Ok(file) = file {
+        let file_path = file_root.join(&user_root).join(filename);
+        ensure_parent_dir_sync(&file_path)?;
+        file.persist_at(file_path)?;
+      }
+    }
     Ok(())
   })
   .await??;
@@ -236,12 +247,16 @@ pub async fn read_video_transcode_get(
     user_root.clone(),
     file.to_string(),
     resize,
-    bitrate
+    bitrate,
   )
   .await?;
 
   let reader = ReaderStream::new(video_stream);
-  Ok(create_unsized_stream_resp(reader, Some("video/mp4".to_string()), None))
+  Ok(create_unsized_stream_resp(
+    reader,
+    Some("video/mp4".to_string()),
+    None,
+  ))
 }
 
 pub fn file_routers() -> Scope {
@@ -249,7 +264,10 @@ pub fn file_routers() -> Scope {
     .route("/upload", web::post().to(upload))
     .route("/read_image", web::post().to(read_image_post))
     .route("/read_image", web::get().to(read_image_get))
-    .route("/read_video_transcode", web::get().to(read_video_transcode_get))
+    .route(
+      "/read_video_transcode",
+      web::get().to(read_video_transcode_get),
+    )
     .route("/{action}", web::get().to(fs_actions_get))
     .route("/{action}", web::post().to(fs_actions_post))
 }
