@@ -70,7 +70,7 @@ export async function upload_file(dir: string, files: File[], config?: { onUploa
   for (let file of files) {
     let name = file.webkitRelativePath || file.name;
     const file_path = path.join(dir, name);
-    form.append(file_path, file, file_path);
+    form.append(file_path, file, file.name);
   }
   form.append('dir', dir);
   let resp = await post_formdata(url.toString(), form, config?.onUploadProgress);

@@ -162,7 +162,7 @@ pub async fn upload(
         ensure_parent_dir_sync(&file_path)?;
         let parent_dir = file_path.parent();
         if let Some(parent_dir) = parent_dir {
-          file.persist_in(parent_dir.to_path_buf())?;
+          file.persist_in(parent_dir)?;
         }
       }
     }
