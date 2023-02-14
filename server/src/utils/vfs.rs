@@ -251,3 +251,8 @@ pub async fn zip_path_to_stream(
 
   Ok(r)
 }
+
+pub fn ensure_dir_sync(dir: impl Into<PathBuf>) -> Result<(), AppError> {
+  let p: PathBuf = dir.into();
+  Ok(std::fs::create_dir_all(p)?)
+}

@@ -81,8 +81,18 @@ async fn main() -> std::io::Result<()> {
 
   println!("server start on {addr:?}");
 
+  
   HttpServer::new(move || {
+    let upload_temp_dir = std::env::var("UPLOAD_TEMPDIR").ok();
+    let awmp_config;
+    if let Some(upload_temp_dir) = upload_temp_dir {
+      utils::vfs::ensure_dir_sync(&upload_temp_dir);
+      awmp_config = awmp::PartsConfig::default().with_temp_dir(&upload_temp_dir);
+    } else {
+      awmp_config = awmp::PartsConfig::default();
+    }
     App::new()
+      .app_data(awmp_config)
       .app_data(web::Data::new(app_state.clone()))
       .service(routers::fs::file_routers())
       .service(routers::auth::auth_routers())
@@ -107,7 +117,7 @@ async fn main() -> std::io::Result<()> {
         }
       })
       .wrap(middlewares::session::session())
-      // .wrap(Logger::default())
+    // .wrap(Logger::default())
   })
   .bind(addr)?
   .run()
