@@ -4,9 +4,9 @@ import ImagePreview from './image-viewer';
 import TextPreview from './text-viewer';
 import VideoPreview from './video-viewer';
 import style from './index.module.less';
-import { lazy, Suspense, useCallback, useState } from 'react';
+import { lazy, memo, Suspense, useCallback, useState } from 'react';
 
-export default function Preview({ files, dir, file, onClose }: { files: FileStat[], dir: string, file: FileStat, onClose?: () => void }) {
+function _Preview({ files, dir, file, onClose }: { files: FileStat[], dir: string, file: FileStat, onClose?: () => void }) {
   const [title, setTitle] = useState(file.name);
 
   const onPreviewingChange = useCallback((f: FileStat) => { setTitle(f?.name || '') }, []);
@@ -38,3 +38,7 @@ export default function Preview({ files, dir, file, onClose }: { files: FileStat
     </div>
   </div>
 }
+
+const Preview = memo(_Preview);
+
+export default Preview;

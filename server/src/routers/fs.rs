@@ -156,12 +156,14 @@ pub async fn upload(
   let user_root = user_root.clone();
   web::block(move || -> Result<(), AppError> {
     let files = parts.files.into_inner();
-    for (_, file) in files {
+    for (filename, file) in files {
       if let Ok(file) = file {
-        let filename = file.sanitized_file_name();
         let file_path = file_root.join(&user_root).join(filename);
         ensure_parent_dir_sync(&file_path)?;
-        file.persist_at(file_path)?;
+        let parent_dir = file_path.parent();
+        if let Some(parent_dir) = parent_dir {
+          file.persist_in(parent_dir.to_path_buf())?;
+        }
       }
     }
     Ok(())

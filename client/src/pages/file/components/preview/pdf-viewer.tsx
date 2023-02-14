@@ -37,6 +37,7 @@ export default function PdfViewer({ dir, file }: { dir: string, file: FileStat }
         canvas.height = Math.floor(viewport.height * outputScale);
         canvas.style.width = Math.floor(viewport.width) + "px";
         canvas.style.height = Math.floor(viewport.height) + "px";
+        canvas.style.border = '1px solid #eee';
         canvas.classList.add(style['pdf-canvas']);
   
         const transform = outputScale !== 1

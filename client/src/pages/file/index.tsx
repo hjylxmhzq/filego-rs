@@ -105,13 +105,22 @@ export default function FilePage() {
               }}>新建文件夹</Button>
               <Button onClick={async () => {
                 try {
-                  await upload(currentDir, { onUploadProgress, mulitple: true, directory: true });
+                  await upload(currentDir, { onUploadProgress, mulitple: true });
                 } catch (_) {
                   console.error('upload error');
                 }
                 setProgress({ total: 0, uploaded: 0 });
                 reloadFiles();
               }}>上传</Button>
+              <Button onClick={async () => {
+                try {
+                  await upload(currentDir, { onUploadProgress, mulitple: true, directory: true });
+                } catch (_) {
+                  console.error('upload error');
+                }
+                setProgress({ total: 0, uploaded: 0 });
+                reloadFiles();
+              }}>上传文件夹</Button>
             </div>
           </div>
           {
