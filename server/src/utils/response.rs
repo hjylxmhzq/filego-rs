@@ -1,8 +1,8 @@
-use actix_web::{body::SizedStream, HttpResponse};
+use actix_web::HttpResponse;
+use percent_encoding::{AsciiSet, CONTROLS};
 use serde::Serialize;
 use tokio::{fs::File, io::AsyncRead};
 use tokio_util::io::ReaderStream;
-use percent_encoding::{CONTROLS, AsciiSet};
 
 use super::stream::RangeStream;
 
@@ -88,17 +88,17 @@ pub fn create_stream_resp(
   if let Some(download_name) = download_name {
     resp.append_header((
       "Content-Disposition",
-      format!(r#"attachment; filename*=UTF-8''{}"#, percent_encode(download_name)),
+      format!(
+        r#"attachment; filename*=UTF-8''{}"#,
+        percent_encode(download_name)
+      ),
     ));
   }
   resp.append_header(("Accept-Ranges", "bytes"));
   if is_range {
     let l = range.0;
     let r = range.1;
-    resp.append_header((
-      "Content-Range",
-      format!("bytes {}-{}/{}", l, r, total_size),
-    ));
+    resp.append_header(("Content-Range", format!("bytes {}-{}/{}", l, r, total_size)));
   }
   resp.content_type(if let Some(mime) = mime_type {
     mime
@@ -127,7 +127,6 @@ pub fn create_unsized_stream_resp<T: AsyncRead + 'static>(
   });
   resp.streaming(stream)
 }
-
 
 const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
 

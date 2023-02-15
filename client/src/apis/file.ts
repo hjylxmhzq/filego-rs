@@ -63,7 +63,7 @@ export async function read_text_file(dir: string, file: string) {
   return content;
 }
 
-export async function upload_file(dir: string, files: File[], config?: { onUploadProgress?: (e: AxiosProgressEvent) => void }) {
+export async function upload_file(dir: string, files: File[], config?: { onUploadProgress?: (e: AxiosProgressEvent, info: { text: string }) => void }) {
   const url = new URL('/file/upload', window.location.origin);
 
   const form = new FormData();
@@ -73,11 +73,19 @@ export async function upload_file(dir: string, files: File[], config?: { onUploa
     form.append(file_path, file, file.name);
   }
   form.append('dir', dir);
-  let resp = await post_formdata(url.toString(), form, config?.onUploadProgress);
+  const text = files[0].name + '...';
+  let resp = await post_formdata(url.toString(), form, (e) => config?.onUploadProgress?.(e, { text }));
   return resp;
 }
 
-export async function upload(dir: string, config?: { directory?: boolean, mulitple?: boolean, onUploadProgress?: (e: AxiosProgressEvent) => void }): Promise<Response> {
+export async function upload(
+  dir: string,
+  config?: {
+    directory?: boolean,
+    mulitple?: boolean,
+    onUploadProgress?: (e: AxiosProgressEvent, info: { text: string }) => void
+  }
+): Promise<Response> {
   const input = document.createElement('input');
   input.setAttribute('type', 'file');
   input.style.display = 'none';

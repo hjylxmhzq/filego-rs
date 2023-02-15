@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useMemo, useRef, useState } from "react"
+import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { create_compression_download_link, create_dir, create_download_link, delete_file, FileStat, read_dir, upload } from "../../apis/file";
 import path from 'path-browserify';
 import style from './index.module.less';
@@ -19,17 +19,18 @@ export default function FilePage() {
   let [files, setFiles] = useState<any[]>([]);
   const [signal, reloadFiles] = useRefresh();
   let [isLoading, setIsLoading] = useState(false);
-  let [progress, setProgress] = useState({ total: 0, uploaded: 0 });
+  let [progress, setProgress] = useState<{ total: number, uploaded: number, text: string, id: string }[]>([]);
   const modalRef = useRef<{ show: () => Promise<string> }>(null);
+  const uploadId = useRef(0);
 
   const location = useLocation();
   const currentDir = location.state?.currentDir || '';
   const previewing = location.state?.previewing;
   const history = useNavigate();
 
-  const gotoDir = (dir: string = currentDir) => {
+  const gotoDir = useCallback((dir: string = currentDir) => {
     history('/', { state: { currentDir: dir } });
-  };
+  }, [currentDir, history]);
 
   const reload = async (dir: string = currentDir) => {
     setIsLoading(true);
@@ -71,8 +72,25 @@ export default function FilePage() {
   };
 
   const currentPath = previewing ? path.join(currentDir, previewing.name) : currentDir;
-  const onUploadProgress = (e: AxiosProgressEvent) => {
-    setProgress({ total: e.total || 0, uploaded: e.loaded })
+  const onUploadProgressFac = (id: string, abort: AbortSignal) => {
+    abort.addEventListener('abort', () => {
+      setProgress((progress) => {
+        let p = progress.findIndex(p => p.id === id);
+        console.log('aborttt', p);
+        if (p === -1) return [...progress];
+        progress.splice(p);
+        return [...progress];
+      })
+    }, false);
+    return (e: AxiosProgressEvent, info: { text: string }) => {
+      setProgress(progress => {
+        let p = progress.find(p => p.id === id);
+        if (!p) return [...progress, { total: e.total || 0, uploaded: e.loaded, text: info.text, id }];
+        p.total = e.total || 0;
+        p.uploaded = e.loaded;
+        return [...progress];
+      })
+    }
   };
 
   const fileList = useMemo(() => {
@@ -95,7 +113,11 @@ export default function FilePage() {
     {
       !previewing ?
         <div>
-          {!!progress.total && <UploadProgress total={progress.total} uploaded={progress.uploaded} />}
+          {
+            progress.map(progress => {
+              return <UploadProgress key={progress.id} total={progress.total} uploaded={progress.uploaded} text={progress.text} />
+            })
+          }
           <LoadingBar loading={isLoading} />
           <div className={style['header-bar']}>
             <Breadcumb onJumpPath={(p) => gotoDir(p)} currentPath={currentPath} />
@@ -104,21 +126,23 @@ export default function FilePage() {
                 showAddFolder();
               }}>新建文件夹</Button>
               <Button onClick={async () => {
+                const abort = new AbortController();
                 try {
-                  await upload(currentDir, { onUploadProgress, mulitple: true });
+                  await upload(currentDir, { onUploadProgress: onUploadProgressFac(uploadId.current++ + '', abort.signal), mulitple: true });
                 } catch (_) {
                   console.error('upload error');
                 }
-                setProgress({ total: 0, uploaded: 0 });
+                abort.abort();
                 reloadFiles();
               }}>上传</Button>
               <Button onClick={async () => {
+                const abort = new AbortController();
                 try {
-                  await upload(currentDir, { onUploadProgress, mulitple: true, directory: true });
+                  await upload(currentDir, { onUploadProgress: onUploadProgressFac(uploadId.current++ + '', abort.signal), mulitple: true, directory: true });
                 } catch (_) {
                   console.error('upload error');
                 }
-                setProgress({ total: 0, uploaded: 0 });
+                abort.abort();
                 reloadFiles();
               }}>上传文件夹</Button>
             </div>
@@ -129,7 +153,7 @@ export default function FilePage() {
               : <EmptyList />
           }
         </div>
-        : <Preview file={previewing} files={files} dir={currentDir} onClose={() => gotoDir()} />
+        : <Preview file={previewing} files={files} dir={currentDir} onClose={gotoDir} />
     }
   </div>
 }

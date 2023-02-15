@@ -5,7 +5,7 @@ use lazy_static::lazy_static;
 lazy_static! {
   static ref TIMER_SET: Mutex<HashMap<String, Instant>> = Mutex::new(HashMap::new());
 }
-
+#[allow(unused)]
 pub fn timer(tag: &str) {
   let mut t = TIMER_SET.lock().unwrap();
   let instant = t.get(tag);

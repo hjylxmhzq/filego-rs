@@ -1,4 +1,3 @@
-use actix_web::body::SizedStream;
 use actix_web::web::block;
 use async_zip::write::ZipFileWriter;
 use async_zip::{Compression, ZipEntryBuilder};
