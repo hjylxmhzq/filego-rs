@@ -85,7 +85,7 @@ export default function FilePage() {
     return (e: AxiosProgressEvent, info: { text: string }) => {
       setProgress(progress => {
         let p = progress.find(p => p.id === id);
-        if (!p) return [...progress, { total: e.total || 0, uploaded: e.loaded, text: info.text, id }];
+        if (!p) return [...progress, { total: e.total || 0, uploaded: e.loaded, text: info.text + ' ', id }];
         p.total = e.total || 0;
         p.uploaded = e.loaded;
         return [...progress];

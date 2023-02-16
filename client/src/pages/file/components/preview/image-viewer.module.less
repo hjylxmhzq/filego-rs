@@ -1,4 +1,3 @@
-@import '../../../../theme.less';
 
 .image-thumbnails {
   position: absolute;
@@ -17,7 +16,7 @@
     transition: all 0.2s;
 
     &:hover {
-      box-shadow: @box-shadow-strong;
+      box-shadow: var(--box-shadow-strong);
     }
 
     &:not(:last-of-type) {
@@ -35,7 +34,7 @@
 }
 
 .highlight {
-  box-shadow: @box-shadow-strong;
+  box-shadow: var(--box-shadow-strong);
 }
 
 .show {

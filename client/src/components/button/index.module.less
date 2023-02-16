@@ -1,14 +1,59 @@
 .btn {
   border: 0;
-  background-color: #ddd;
+  background-color: var(--bg-medium);
   transition: all 0.2s;
   padding: 5px 10px;
   border-radius: 5px;
   cursor: pointer;
   font-size: inherit;
-  color: rgb(30, 52, 53);
+  color: var(--font-color);
 
   &:hover {
-    background-color: #ccc;
+    background-color: var(--bg-heavy-hover);
+  }
+}
+
+.pop-btn {
+  position: relative;
+  box-shadow: var(--box-shadow);
+  border-radius: 50%;
+  transition: all 0.3s;
+  overflow: hidden;
+  min-width: 50px;
+  background-color: var(--bg-medium);
+  cursor: pointer;
+
+  .pop-content {
+    position: absolute;
+    opacity: 0;
+  }
+
+  .pop-inner-btn {
+    opacity: 1;
+    height: 50px;
+    width: 50px;
+    overflow: hidden;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &>div {
+    transition: all 0.3s;
+  }
+
+  &:hover {
+    .pop-inner-btn {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .pop-content {
+      opacity: 1;
+    }
+    padding: 10px;
+    border-radius: 5px;
   }
 }

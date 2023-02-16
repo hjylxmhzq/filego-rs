@@ -73,7 +73,7 @@ export async function upload_file(dir: string, files: File[], config?: { onUploa
     form.append(file_path, file, file.name);
   }
   form.append('dir', dir);
-  const text = files[0].name + '...';
+  const text = files.length > 1 ? files[0].name + `...(${files.length}Files)` : files[0].name;
   let resp = await post_formdata(url.toString(), form, (e) => config?.onUploadProgress?.(e, { text }));
   return resp;
 }
