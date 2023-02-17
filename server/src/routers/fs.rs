@@ -70,7 +70,7 @@ pub async fn fs_actions(
 
   match action.as_str() {
     "read_dir" => {
-      let files = vfs::read_dir(file_root.clone(), user_root.clone(), file.to_owned())
+      let files = vfs::read_dir(file_root, user_root, file)
         .await
         .unwrap();
 
@@ -80,7 +80,7 @@ pub async fn fs_actions(
     }
 
     "create_dir" => {
-      vfs::create_dir(file_root.clone(), user_root.clone(), file.to_owned())
+      vfs::create_dir(file_root, user_root, file)
         .await
         .unwrap();
 
@@ -89,7 +89,7 @@ pub async fn fs_actions(
 
     "read_compression" => {
       let stream =
-        read_to_zip_stream(file_root.clone(), user_root.clone(), file.to_string()).await?;
+        read_to_zip_stream(file_root, user_root, file).await?;
       let resp = create_unsized_stream_resp(
         stream,
         Some("application/zip".to_string()),
@@ -99,12 +99,12 @@ pub async fn fs_actions(
     }
 
     "read" => {
-      let file_stat = vfs::stat(file_root.clone(), user_root.clone(), file).await?;
+      let file_stat = vfs::stat(file_root, user_root, file).await?;
       let (range_start, range_end, is_range) = parse_range(headers, file_stat.size)?;
       let stream = read_file_stream(
-        file_root.clone(),
-        user_root.to_owned(),
-        file.to_owned(),
+        file_root,
+        user_root,
+        file,
         (range_start, range_end),
       )
       .await?;
@@ -134,12 +134,12 @@ pub async fn fs_actions(
     }
 
     "delete" => {
-      vfs::delete(file_root.clone(), user_root.clone(), file.to_owned()).await?;
+      vfs::delete(file_root, user_root, file).await?;
       Ok(create_resp(true, EmptyResponseData::new(), "done"))
     }
 
     "stat" => {
-      let file_stat = vfs::stat(file_root.clone(), user_root.clone(), file).await?;
+      let file_stat = vfs::stat(file_root, user_root, file).await?;
       Ok(create_resp(true, file_stat, ""))
     }
     _ => Ok(create_resp(false, EmptyResponseData::new(), "error action")),
@@ -163,7 +163,7 @@ pub async fn delete_batch(
     .files
     .clone()
     .ok_or(AppError::new("query params error"))?;
-  vfs::delete_batch(file_root.clone(), user_root.clone(), files).await?;
+  vfs::delete_batch(file_root, user_root, files).await?;
   Ok(create_resp(true, EmptyResponseData::new(), ""))
 }
 

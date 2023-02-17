@@ -7,6 +7,7 @@ pub mod session;
 pub mod auth;
 pub mod transform;
 pub mod stream;
+pub mod path;
 
 #[cfg(debug_assertions)]
 pub mod performance;
