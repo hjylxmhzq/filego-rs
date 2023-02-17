@@ -1,5 +1,5 @@
-import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { create_compression_download_link, create_dir, create_download_link, delete_file, FileStat, read_dir, upload } from "../../apis/file";
+import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react"
+import { create_compression_download_link, create_dir, create_download_link, delete_file, delete_files, FileStat, read_dir, upload } from "../../apis/file";
 import path from 'path-browserify';
 import style from './index.module.less';
 import Preview from "./components/preview";
@@ -10,11 +10,12 @@ import moment from 'moment';
 import { formatFileSize } from "../../utils/formatter";
 import classnames from 'classnames';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Button from "../../components/button";
+import Button, { AnimationButton } from "../../components/button";
 import { UploadProgress } from "../../components/progress";
 import { AxiosProgressEvent } from "axios";
 import Modal from "../../components/modal";
 import { FileIcon } from "../../components/icon/icon";
+import Checkbox from "../../components/checkbox";
 
 export default function FilePage() {
   let [files, setFiles] = useState<any[]>([]);
@@ -94,8 +95,14 @@ export default function FilePage() {
     }
   };
 
+  const [checkedFiles, setCheckFiles] = useState<Map<string, FileStat>>(new Map());
+  const [showDeleteComfirmModal, setShowDeleteComfirmModal] = useState(false);
+
+  const onFileChecked = useCallback((checkedFiles: Map<string, FileStat>) => {
+    setCheckFiles(checkedFiles);
+  }, []);
   const fileList = useMemo(() => {
-    return <FileList onReload={reloadFiles} files={files} currentDir={currentDir} onClickFile={onClickFile} />;
+    return <FileList onFileChecked={onFileChecked} onReload={reloadFiles} files={files} currentDir={currentDir} onClickFile={onClickFile} />;
     // eslint-disable-next-line
   }, [files, currentDir]);
 
@@ -110,6 +117,19 @@ export default function FilePage() {
   };
 
   return <div className={style['file-page']}>
+    <Modal mask show={showDeleteComfirmModal}>
+      <div className={style['delete-comfirm-modal']}>
+        <div>确认删除 <strong>{checkedFiles.keys().next().value}</strong> 等 <strong>{checkedFiles.size}</strong> 个文件吗?</div>
+        <div>
+          <Button type="danger" onClick={async () => {
+            await delete_files(currentDir, [...checkedFiles.keys()]);
+            setShowDeleteComfirmModal(false);
+            reloadFiles();
+          }}>删除</Button>
+          <Button onClick={() => setShowDeleteComfirmModal(false)}>取消</Button>
+        </div>
+      </div>
+    </Modal>
     <AddFolderModal ref={modalRef} onFinished={onAddFolderFinished} />
     {
       !previewing ?
@@ -146,6 +166,16 @@ export default function FilePage() {
                 abort.abort();
                 reloadFiles();
               }}>上传文件夹</Button>
+
+              {
+                checkedFiles.size !== 0 &&
+                <>
+                  <AnimationButton type="danger" onClick={async () => {
+                    setShowDeleteComfirmModal(true);
+                  }}
+                  >删除</AnimationButton>
+                </>
+              }
             </div>
           </div>
           {
@@ -220,7 +250,7 @@ const AddFolderModal = forwardRef<{ show: () => void }, { onFinished?: (folder: 
   </Modal>
 });
 
-function FileList({ files, onClickFile, currentDir, onReload }: { files: FileStat[], onClickFile: (file: FileStat) => void, currentDir: string, onReload: () => void }) {
+function FileList({ onFileChecked, files, onClickFile, currentDir, onReload }: { onFileChecked?: (checkedFiles: Map<string, FileStat>) => void, files: FileStat[], onClickFile: (file: FileStat) => void, currentDir: string, onReload: () => void }) {
 
   const actionsMenu = (file: FileStat) => <div className={style['action-menu']}>
     <div className={style['action-btn']}>
@@ -251,6 +281,7 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
 
   let [sortKey, setSortKey] = useState<keyof FileStat | undefined>();
   let [sortType, setSortType] = useState<-1 | 1>(1);
+  let [checkedFiles, setCheckedFiles] = useState<Map<string, FileStat>>(new Map());
 
   if (sortKey) {
     copiedFiles.sort((a, b) => {
@@ -276,6 +307,12 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
   const lastDir = useRef(currentDir);
 
   useEffect(() => {
+    onFileChecked?.(checkedFiles);
+  }, [checkedFiles, onFileChecked]);
+
+  useEffect(() => {
+    const empty = new Map();
+    setCheckedFiles(empty);
     if (currentDir.length > lastDir.current.length) {
       if (animationClass === 'right') {
         setAnimationClass('right1');
@@ -293,9 +330,38 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
     // eslint-disable-next-line
   }, [files]);
 
+  const [, startTransition] = useTransition();
+
+  const onCheck = (file: FileStat) => {
+    if (checkedFiles.has(file.name)) {
+      checkedFiles.delete(file.name);
+    } else {
+      checkedFiles.set(file.name, file);
+    }
+    startTransition(() => {
+      const m = new Map(checkedFiles);
+      setCheckedFiles(m);
+    });
+  }
+
+  const checkAll = () => {
+    if (checkedFiles.size === files.length) {
+      setCheckedFiles(new Map());
+    } else {
+      const entries: [string, FileStat][] = files.map(f => [f.name, f]);
+      setCheckedFiles(new Map(entries));
+    }
+  }
+
   return <div className={classnames(style['file-list'], style['fade-in-start'], style['ease-in-' + animationClass])}>
     <div className={style['file-head']}>
       <div onClick={() => setSort('name')}>
+        <span onClick={(e) => {
+          e.stopPropagation();
+          checkAll();
+        }}>
+          <Checkbox checked={checkedFiles.size === files.length} className={style['checkall']} />
+        </span>
         文件名
         {sortKey === 'name' && <span className={classnames(style['sort-icon'], { [style['revert-icon']]: sortType === -1 })}>&gt;</span>}
       </div>
@@ -319,10 +385,11 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
           >
             <div
               className={style['left-area']}>
-              <span className={style['title-area']}>
+              <span className={style['title-area']} onClick={() => onCheck(file)}>
+                <Checkbox className={style['checkbox']} checked={checkedFiles.has(file.name)} />
                 <FileIcon size={18} className={style['file-icon']} file={file} />
                 <span
-                  onClick={() => onClickFile(file)}
+                  onClick={(e) => { e.stopPropagation(); onClickFile(file) }}
                 >
                   {file.name}
                 </span>

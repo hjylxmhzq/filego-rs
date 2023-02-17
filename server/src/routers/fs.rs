@@ -146,6 +146,27 @@ pub async fn fs_actions(
   }
 }
 
+#[derive(Deserialize)]
+pub struct DeleteFilesOfDirReq {
+  files: Option<Vec<String>>,
+}
+
+pub async fn delete_batch(
+  query: web::Json<DeleteFilesOfDirReq>,
+  state: web::Data<AppData>,
+  sess: Session,
+) -> Result<HttpResponse, AppError> {
+  let file_root = &state.read().unwrap().config.file_root;
+  let user_root = &sess.get_user_root()?;
+  let files = query
+    .borrow()
+    .files
+    .clone()
+    .ok_or(AppError::new("query params error"))?;
+  vfs::delete_batch(file_root.clone(), user_root.clone(), files).await?;
+  Ok(create_resp(true, EmptyResponseData::new(), ""))
+}
+
 pub async fn upload(
   parts: awmp::Parts,
   state: web::Data<AppData>,
@@ -267,6 +288,7 @@ pub async fn read_video_transcode_get(
 pub fn file_routers() -> Scope {
   web::scope("/file")
     .route("/upload", web::post().to(upload))
+    .route("/delete_batch", web::post().to(delete_batch))
     .route("/read_image", web::post().to(read_image_post))
     .route("/read_image", web::get().to(read_image_get))
     .route(

@@ -91,6 +91,19 @@ pub async fn delete(file_root: PathBuf, user_root: String, file: String) -> Resu
   Ok(())
 }
 
+pub async fn delete_batch(file_root: PathBuf, user_root: String, files: Vec<String>) -> Result<(), AppError> {
+  for file in files {
+    let dir = normailze_path(&file_root, &user_root, &file);
+    let path_stat = stat(file_root.clone(), user_root.clone(), &file).await?;
+    if path_stat.is_dir {
+      fs::remove_dir_all(dir).await?;
+    } else {
+      fs::remove_file(dir).await?;
+    }
+  }
+  Ok(())
+}
+
 pub async fn read_video_transform_stream(
   file_root: PathBuf,
   user_root: String,

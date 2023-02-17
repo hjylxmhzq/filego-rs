@@ -13,6 +13,27 @@
   }
 }
 
+.danger {
+  color: #b72727;
+}
+
+.animation {
+  animation: grow 0.3s 1 forwards ease-out;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+@keyframes grow {
+  from {
+    max-width: 0px;
+    padding: 5px 0;
+  }
+  to {
+    max-width: 50px;
+    padding: 5px;
+  }
+}
+
 .pop-btn {
   position: relative;
   box-shadow: var(--box-shadow);

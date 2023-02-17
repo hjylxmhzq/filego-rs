@@ -1,5 +1,6 @@
 
 .modal {
+  color: var(--font-color);
   position: fixed;
   left: 50%;
   top: 50%;
@@ -9,6 +10,17 @@
   border-radius: 5px;
   box-shadow: var(--box-shadow);
   min-width: 100px;
+  animation: scaleup 0.2s ease-out 1 forwards;
+  overflow: hidden;
+}
+
+@keyframes scaleup {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .mask {
@@ -18,7 +30,7 @@
   top: 0;
   bottom: 0;
   right: 0;
-  background-color: #86868675;
+  background-color: #57575763;
 }
 
 .container {

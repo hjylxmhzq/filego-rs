@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import { MouseEventHandler, ReactNode, useEffect, useRef, useState } from "react";
 import style from './index.module.less';
 
@@ -5,12 +6,16 @@ interface Props {
   onClick?: MouseEventHandler;
   children: ReactNode;
   height?: number
+  type?: 'normal' | 'danger'
 }
 
 export default function Button(props: Props) {
-  return <button style={{ height: props.height || 'auto' }} className={style.btn} onClick={props.onClick}>{props.children}</button>
+  return <button style={{ height: props.height || 'auto' }} className={classNames(style.btn, { [style.danger]: props.type === 'danger' })} onClick={props.onClick}>{props.children}</button>
 }
 
+export function AnimationButton(props: Props) {
+  return <button style={{ height: props.height || 'auto' }} className={classNames(style.btn, style.animation, { [style.danger]: props.type === 'danger' })} onClick={props.onClick}>{props.children}</button>
+}
 
 interface PopBtnProps {
   children?: ReactNode;

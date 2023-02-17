@@ -26,6 +26,13 @@ export async function delete_file(dir: string, file: string): Promise<boolean> {
   return resp.status === 0;
 }
 
+export async function delete_files(dir: string, files: string[]): Promise<boolean> {
+  let resp = await post('/file/delete_batch', {
+    files: files.map(file => path.join(dir, file))
+  });
+  return resp.status === 0;
+}
+
 export async function create_dir(dir: string, file: string): Promise<boolean> {
   let resp = await post('/file/create_dir', {
     file: path.join(dir, file)
