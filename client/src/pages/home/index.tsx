@@ -1,4 +1,5 @@
 import { PopButton } from "../../components/button";
+import Icon from "../../components/icon/icon";
 import { useTheme } from "../../hooks/common";
 import FilePage from "../file";
 import Header from "./components/header";
@@ -8,7 +9,7 @@ export function HomePage() {
     <Header></Header>
     <FilePage />
     <div style={{ position: 'fixed', right: 10, bottom: 10 }}>
-      <PopButton button={<div>Mode</div>}>
+      <PopButton button={<div><Icon name="shezhi" size={28} /></div>}>
         <GlobalSettingMenu />
       </PopButton>
     </div>

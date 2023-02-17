@@ -78,7 +78,8 @@
   "scripts": {
     "start": "node scripts/start.js",
     "build": "BUILD_PATH='../server/static' node scripts/build.js",
-    "test": "node scripts/test.js"
+    "test": "node scripts/test.js",
+    "update-icon": "bash ./scripts/update-icon.sh"
   },
   "eslintConfig": {
     "extends": [

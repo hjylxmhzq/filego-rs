@@ -12,6 +12,7 @@ use std::{
   sync::{Arc, RwLock},
 };
 use tokio::sync::Mutex;
+use tracing::log::{error, info};
 use utils::auth::auto_create_user;
 mod middlewares;
 pub mod models;
@@ -67,7 +68,7 @@ pub type AppData = Arc<RwLock<AppState>>;
 #[allow(unused)]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-  // env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+  tracing_subscriber::fmt::init();
 
   let mut app_state = init();
   let static_root = app_state.config.static_root.clone();
@@ -79,9 +80,8 @@ async fn main() -> std::io::Result<()> {
   let addr = SocketAddr::from_str(format!("{host}:{port}").as_str()).unwrap();
   drop(state);
 
-  println!("server start on {addr:?}");
+  info!("server start on {addr:?}");
 
-  
   HttpServer::new(move || {
     let upload_temp_dir = std::env::var("UPLOAD_TEMPDIR").ok();
     let awmp_config;
@@ -117,7 +117,6 @@ async fn main() -> std::io::Result<()> {
         }
       })
       .wrap(middlewares::session::session())
-    // .wrap(Logger::default())
   })
   .bind(addr)?
   .run()
@@ -127,10 +126,10 @@ async fn main() -> std::io::Result<()> {
 fn init() -> AppState {
   dotenv().map_or_else(
     |_| {
-      println!("can not find .env file, use default value");
+      error!("can not find .env file, use default value");
     },
     |v| {
-      println!("find .env file at {v:?}");
+      info!("find .env file at {v:?}");
     },
   );
 
@@ -172,9 +171,9 @@ fn connect_db() -> SqliteConnection {
   let database_url = env::var("DATABASE_URL").unwrap_or("sqlite://./app.db".to_owned());
   let mut conn =
     SqliteConnection::establish(&database_url).expect("can not establish database connection");
-  println!("database is connected");
-  println!("running migrations");
+  info!("database is connected");
+  info!("running migrations");
   MigrationHarness::run_pending_migrations(&mut conn, MIGRATIONS).unwrap();
-  println!("migrations finished");
+  info!("migrations finished");
   conn
 }

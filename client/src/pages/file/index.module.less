@@ -11,6 +11,10 @@
   flex: 1 1 900px;
 }
 
+.file-icon {
+  margin-right: 10px;
+}
+
 .file-item {
   height: 30px;
   line-height: 30px;
@@ -19,6 +23,7 @@
   font-size: 12px;
   display: flex;
   justify-content: space-between;
+
 
   &>div {
     padding: 0px 20px;
@@ -43,6 +48,10 @@
     display: flex;
     justify-content: space-between;
     padding-right: 10px;
+    &>.title-area {
+      display: flex;
+      align-items: center;
+    }
   }
 
   &>.right-area {
@@ -53,14 +62,14 @@
       transition: all 0.2s;
       text-decoration: none;
       margin-left: 5px;
-      color: #333;
+      color: var(--font-color);
       border-radius: 3px;
       line-height: 16px;
       display: block;
       cursor: pointer;
 
       &:hover {
-        background-color: #eee;
+        background-color: var(--bg-medium-hover);
       }
     }
   }
@@ -89,13 +98,13 @@
 
   button {
     transition: all 0.2s;
-    border: 1px solid #aaa;
-    background-color: #f3f3f3;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-medium);
     margin-left: 10px;
     cursor: pointer;
 
     &:hover {
-      background-color: #aaa;
+      background-color: var(--bg-medium-hover);
     }
   }
 }
@@ -187,10 +196,10 @@
     cursor: pointer;
     display: block;
     padding: 5px;
-    color: #333;
+    color: var(--font-color);
 
     &:hover {
-      background-color: #eee;
+      background-color: var(--bg-medium-hover);
     }
   }
 }

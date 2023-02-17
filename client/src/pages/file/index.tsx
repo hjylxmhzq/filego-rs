@@ -14,6 +14,7 @@ import Button from "../../components/button";
 import { UploadProgress } from "../../components/progress";
 import { AxiosProgressEvent } from "axios";
 import Modal from "../../components/modal";
+import { FileIcon } from "../../components/icon/icon";
 
 export default function FilePage() {
   let [files, setFiles] = useState<any[]>([]);
@@ -318,10 +319,13 @@ function FileList({ files, onClickFile, currentDir, onReload }: { files: FileSta
           >
             <div
               className={style['left-area']}>
-              <span
-                onClick={() => onClickFile(file)}
-              >
-                {file.name}
+              <span className={style['title-area']}>
+                <FileIcon size={18} className={style['file-icon']} file={file} />
+                <span
+                  onClick={() => onClickFile(file)}
+                >
+                  {file.name}
+                </span>
               </span>
               <Popover auto={true} content={actionsMenu(file)}>
                 <span>...</span>
