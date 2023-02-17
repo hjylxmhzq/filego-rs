@@ -6,11 +6,13 @@
   max-width: 90%;
   overflow: auto;
   padding: 10px;
-  background-color: #eee;
+  background-color: var(--bg-heavy-hover);
+  box-shadow: var(--box-shadow);
   transition: all 0.3s;
   border-radius: 5px;
   opacity: 0;
   pointer-events: none;
+
   .thumbnail {
     vertical-align: middle;
     transition: all 0.2s;
@@ -27,7 +29,7 @@
 
     img {
       height: 100px;
-      width: auto;
+      width: 80px;
       display: block;
     }
   }

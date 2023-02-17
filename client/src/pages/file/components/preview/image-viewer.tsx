@@ -119,9 +119,16 @@ export default function ImagePreview({ dir, files, file, onPreviewingChange }: {
     }
   }, []);
 
+  const onImageLoaded = (e: React.SyntheticEvent) => {
+    const el = e.target as HTMLElement;
+    if (el?.tagName.toLowerCase() === 'img') {
+      el.style.width = 'auto';
+    }
+  }
+
   return <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }} ref={containerRef}>
     <img loading="lazy" style={{ maxWidth: '100%', height: '90vh', minHeight: 200 }} src={currentSrc} alt={currentSrc} />
-    <div onClick={clickThumbnail} className={classNames({ [style['show']]: show }, style['image-thumbnails'], 'scrollbar')} ref={thumnailRef}>
+    <div onLoad={onImageLoaded} onClick={clickThumbnail} className={classNames({ [style['show']]: show }, style['image-thumbnails'], 'scrollbar')} ref={thumnailRef}>
       <Thumbnails pics={pics} dir={dir} />
     </div>
   </ div>
