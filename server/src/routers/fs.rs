@@ -87,6 +87,14 @@ pub async fn fs_actions(
       Ok(create_resp(true, EmptyResponseData::new(), ""))
     }
 
+    "read_zip_entries" => {
+      let tree = vfs::read_entries_in_zip(file_root, user_root, file)
+        .await
+        .unwrap();
+
+      Ok(create_resp(true, tree, ""))
+    }
+
     "read_compression" => {
       let stream =
         read_to_zip_stream(file_root, user_root, file).await?;

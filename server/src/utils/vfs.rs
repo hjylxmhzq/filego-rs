@@ -1,9 +1,13 @@
 use actix_web::web::block;
+use async_zip::error::ZipError;
 use async_zip::write::ZipFileWriter;
 use async_zip::{Compression, ZipEntryBuilder};
 use serde::Serialize;
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::io::Cursor;
 use std::path::Path;
+use std::rc::Rc;
 use std::str::FromStr;
 use std::time::UNIX_EPOCH;
 use std::{fs::Metadata, io, path::PathBuf};
@@ -92,7 +96,11 @@ pub async fn delete(file_root: &PathBuf, user_root: &str, file: &str) -> Result<
   Ok(())
 }
 
-pub async fn delete_batch(file_root: &PathBuf, user_root: &str, files: Vec<String>) -> Result<(), AppError> {
+pub async fn delete_batch(
+  file_root: &PathBuf,
+  user_root: &str,
+  files: Vec<String>,
+) -> Result<(), AppError> {
   for file in files {
     let dir = normailze_path(&file_root, &user_root, &file)?;
     let path_stat = stat(file_root, user_root, &file).await?;
@@ -119,11 +127,7 @@ pub async fn read_video_transform_stream(
   Ok(stream)
 }
 
-pub async fn create_dir(
-  file_root: &PathBuf,
-  user_root: &str,
-  file: &str,
-) -> Result<(), AppError> {
+pub async fn create_dir(file_root: &PathBuf, user_root: &str, file: &str) -> Result<(), AppError> {
   let dir = normailze_path(&file_root, &user_root, &file)?;
   let result = fs::create_dir(dir).await?;
   Ok(result)
@@ -142,7 +146,7 @@ pub struct FileStat {
 }
 
 #[mixin::insert(FileStat)]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct FileStatWithName {
   pub name: String,
 }
@@ -267,37 +271,100 @@ pub fn ensure_dir_sync(dir: impl Into<PathBuf>) -> Result<(), AppError> {
   Ok(std::fs::create_dir_all(p)?)
 }
 
+impl From<ZipError> for AppError {
+  fn from(e: ZipError) -> Self {
+    Self { msg: e.to_string() }
+  }
+}
 
-// impl<S, E> MessageBody for SizedStream<S>
-// where
-//     S: Stream<Item = Result<Bytes, E>>,
-//     E: Into<Box<dyn StdError>> + 'static,
-// {
-//     type Error = E;
+#[derive(Debug, Serialize)]
+pub struct FileStatTreeInner {
+  file: FileStatWithName,
+  children: Vec<Rc<RefCell<FileStatTreeInner>>>,
+}
 
-//     #[inline]
-//     fn size(&self) -> BodySize {
-//         BodySize::Sized(self.size)
-//     }
+pub async fn read_entries_in_zip(
+  file_root: &PathBuf,
+  user_root: &str,
+  file: &str,
+) -> Result<Rc<RefCell<FileStatTreeInner>>, AppError> {
+  let file = normailze_path(file_root, user_root, file)?;
+  let mut file = File::open(file).await?;
+  let zip_file = async_zip::read::seek::ZipFileReader::new(&mut file).await?;
+  let mut file_map = HashMap::<String, Rc<RefCell<FileStatTreeInner>>>::new();
+  let mut root = None;
+  for entry in zip_file.file().entries() {
+    let entry = entry.entry();
+    let mut abs_filename = entry.filename();
+    if abs_filename.ends_with("/") {
+      let len = abs_filename.len();
+      abs_filename = &abs_filename[..len - 1];
+    }
+    let f = Path::new(abs_filename);
+    let is_dir = entry.dir();
+    let is_file = !is_dir;
+    let size = entry.uncompressed_size();
+    let modified = entry.last_modification_date();
+    let created = entry.last_modification_date();
+    let accessed = entry.last_modification_date();
+    let filename = f
+      .file_name()
+      .map_or("unknown".to_owned(), |f| f.to_string_lossy().to_string());
+    let parent = f
+      .parent()
+      .map_or("".to_owned(), |p| p.to_string_lossy().to_string());
 
-//     /// Attempts to pull out the next value of the underlying [`Stream`].
-//     ///
-//     /// Empty values are skipped to prevent [`SizedStream`]'s transmission being
-//     /// ended on a zero-length chunk, but rather proceed until the underlying
-//     /// [`Stream`] ends.
-//     fn poll_next(
-//         mut self: Pin<&mut Self>,
-//         cx: &mut Context<'_>,
-//     ) -> Poll<Option<Result<Bytes, Self::Error>>> {
-//         loop {
-//             let stream = self.as_mut().project().stream;
+    let ref_file;
 
-//             let chunk = match ready!(stream.poll_next(cx)) {
-//                 Some(Ok(ref bytes)) if bytes.is_empty() => continue,
-//                 val => val,
-//             };
+    if file_map.contains_key(abs_filename) {
+      ref_file = file_map.get(abs_filename).unwrap().clone();
+    } else {
+      ref_file = Rc::new(RefCell::new(FileStatTreeInner {
+        file: FileStatWithName {
+          name: filename.clone(),
+          is_dir,
+          is_file,
+          file_type: "".to_owned(),
+          size,
+          created: created.second() as u128,
+          modified: modified.second() as u128,
+          accessed: accessed.second() as u128,
+        },
+        children: vec![],
+      }));
+      if is_dir {
+        file_map.insert(abs_filename.to_string(), ref_file.clone());
+      }
+    }
 
-//             return Poll::Ready(chunk);
-//         }
-//     }
-// }
+    let parent_file_stat = file_map.entry(parent.clone()).or_insert_with(|| {
+      let ref_dir = Rc::new(RefCell::new(FileStatTreeInner {
+        file: FileStatWithName {
+          name: parent.clone(),
+          is_dir: true,
+          is_file: false,
+          file_type: "".to_owned(),
+          size,
+          created: created.second() as u128,
+          modified: modified.second() as u128,
+          accessed: accessed.second() as u128,
+        },
+        children: vec![],
+      }));
+      ref_dir
+    });
+
+    match root {
+      None => root = Some(parent),
+      Some(r) if r.len() > parent.len() => {
+        root = Some(parent.clone());
+      }
+      _ => (),
+    }
+
+    parent_file_stat.borrow_mut().children.push(ref_file);
+  }
+  let root = root.ok_or(AppError::new("fail to read zip file"))?;
+  let root = file_map.get(&root).ok_or(AppError::new("fail to read zip file"))?.clone();
+  Ok(root)
+}
