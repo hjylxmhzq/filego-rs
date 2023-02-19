@@ -70,6 +70,13 @@ export async function read_text_file(dir: string, file: string) {
   return content;
 }
 
+export async function read_zip_entries(dir: string, file: string) {
+  const url = new URL('/file/read_zip_entries', window.location.origin);
+  const file_path = path.join(dir, file);
+  let resp = await post(url.toString(), { file: file_path });
+  return resp.data;
+}
+
 export async function upload_file(dir: string, files: File[], config?: { onUploadProgress?: (e: AxiosProgressEvent, info: { text: string }) => void }) {
   const url = new URL('/file/upload', window.location.origin);
 

@@ -5,6 +5,7 @@ import TextPreview from './text-viewer';
 import VideoPreview from './video-viewer';
 import style from './index.module.less';
 import { lazy, memo, Suspense, useCallback, useState } from 'react';
+import ZipPreview from './zip-viewer';
 
 function _Preview({ files, dir, file, onClose }: { files: FileStat[], dir: string, file: FileStat, onClose?: () => void }) {
   const [title, setTitle] = useState(file.name);
@@ -12,6 +13,7 @@ function _Preview({ files, dir, file, onClose }: { files: FileStat[], dir: strin
   const onPreviewingChange = useCallback((f: FileStat) => { setTitle(f?.name || '') }, []);
 
   let guess = mime.getType(file.name);
+  console.log(guess);
   let inner;
   if (guess?.includes('image')) {
     inner = <ImagePreview dir={dir} files={files} file={file} onPreviewingChange={onPreviewingChange} />
@@ -23,6 +25,8 @@ function _Preview({ files, dir, file, onClose }: { files: FileStat[], dir: strin
     const Cmp = lazy(() => import('./pdf-viewer'))
     inner = <Cmp dir={dir} file={file} />
     // inner = <PdfViewer dir={dir} file={file} />
+  } else if (guess?.includes('zip')) {
+    inner = <ZipPreview dir={dir} file={file} />
   } else {
     inner = <div></div>
   }
