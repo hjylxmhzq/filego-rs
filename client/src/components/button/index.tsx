@@ -1,16 +1,17 @@
 import classNames from "classnames";
-import { MouseEventHandler, ReactNode, useEffect, useRef, useState } from "react";
+import { CSSProperties, MouseEventHandler, ReactNode, useEffect, useRef, useState } from "react";
 import style from './index.module.less';
 
 interface Props {
   onClick?: MouseEventHandler;
   children: ReactNode;
   height?: number
-  type?: 'normal' | 'danger'
+  type?: 'normal' | 'danger',
+  style?: CSSProperties,
 }
 
 export default function Button(props: Props) {
-  return <button style={{ height: props.height || 'auto' }} className={classNames(style.btn, { [style.danger]: props.type === 'danger' })} onClick={props.onClick}>{props.children}</button>
+  return <button style={{ height: props.height || 'auto', ...(props.style || {}) }} className={classNames(style.btn, { [style.danger]: props.type === 'danger' })} onClick={props.onClick}>{props.children}</button>
 }
 
 export function AnimationButton(props: Props) {

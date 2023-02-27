@@ -7,6 +7,7 @@ interface Props {
   content: React.ReactElement,
   show?: boolean,
   auto?: boolean,
+  inline?: boolean,
 }
 
 export function Popover(props: Props) {
@@ -54,13 +55,13 @@ export function Popover(props: Props) {
       setIsShow(true);
     }
   }
-  
+
   const contentEl = <div onClick={onClick} ref={contentRef} className={style['popover-item']} style={{ position: 'fixed', left: rect.left, top: rect.top }}>
     {props.content}
   </div>;
 
   const portal = ReactDOM.createPortal(contentEl, document.body);
-  return <div onClick={onClick} ref={ref}>
+  return <div style={{ display: props.inline ? 'inline-block' : 'block' }} onClick={onClick} ref={ref}>
     {props.children}
     {isShow && portal}
   </div>

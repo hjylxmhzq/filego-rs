@@ -120,7 +120,7 @@ pub async fn reset_password(
     .set(password.eq(hashed_pwd))
     .execute(db)?;
 
-  Ok(create_resp(true, EmptyResponseData::new(), "done"))
+  return logout(sess).await;
 }
 
 pub async fn logout(sess: Session) -> Result<HttpResponse, AppError> {
