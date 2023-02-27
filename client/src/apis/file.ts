@@ -50,8 +50,10 @@ export function create_download_link(dir: string, file: string) {
 export function create_thumbnail_link(dir: string, file: string) {
   const url = new URL('/file/read_image', window.location.origin);
   const file_path = path.join(dir, file);
+  const dpr = window.devicePixelRatio || 1;
+  const size = dpr * 200;
   url.searchParams.set('file', file_path);
-  url.searchParams.set('resize', '200');
+  url.searchParams.set('resize', size.toString());
   return url.toString();
 }
 
