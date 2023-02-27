@@ -16,6 +16,7 @@ import { AxiosProgressEvent } from "axios";
 import Modal from "../../components/modal";
 import { FileIcon } from "../../components/icon/icon";
 import Checkbox from "../../components/checkbox";
+import { setting } from "../../store";
 
 export default function FilePage() {
   let [files, setFiles] = useState<any[]>([]);
@@ -266,7 +267,7 @@ function FileList({ onFileChecked, files, onClickFile, currentDir, onReload }: {
           href={create_download_link(currentDir, file.name)}>
           下载
         </a>
-        : <a
+        : setting.download.zipDownloadEnabled ? <a
           className={style['action-btn']}
           download={file.name}
           target="_blank"
@@ -274,6 +275,7 @@ function FileList({ onFileChecked, files, onClickFile, currentDir, onReload }: {
           href={create_compression_download_link(currentDir, file.name)}>
           下载Zip
         </a>
+          : ''
     }
   </div>;
 

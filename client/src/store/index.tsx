@@ -4,6 +4,12 @@ export class Setting {
   download = {
     aria2Enabled: false,
     aria2RpcUrl: "",
+    aria2RpcToken: "",
+    zipDownloadEnabled: true,
+  }
+  preview = {
+    thumbnailScalingEnabled: false,
+    pdfPreviewEnabled: true,
   }
   constructor() {
     this.deserialize();
@@ -19,6 +25,22 @@ export class Setting {
   }
   setAria2RPCUrl(url: string) {
     this.download.aria2RpcUrl = url;
+    this.serialize();
+  }
+  setAria2RPCToken(token: string) {
+    this.download.aria2RpcToken = token;
+    this.serialize();
+  }
+  enableZipDownload(enabled: boolean) {
+    this.download.zipDownloadEnabled = enabled;
+    this.serialize();
+  }
+  enablePdfPreview(enabled: boolean) {
+    this.preview.pdfPreviewEnabled = enabled;
+    this.serialize();
+  }
+  enableThumbnailScaling(enabled: boolean) {
+    this.preview.thumbnailScalingEnabled = enabled;
     this.serialize();
   }
   private serialize() {
@@ -50,9 +72,13 @@ function deserialize(key: string, defaultVal: any) {
 }
 
 function override(obj: any, toObj: any) {
-  if (typeof obj === 'object' && obj) {
+  if (typeof obj === 'object' && obj && typeof toObj === 'object' && toObj) {
     for (let key of Object.keys(obj)) {
-      toObj[key] = obj[key];
+      if (toObj[key] === undefined) {
+        toObj[key] = obj[key];
+      } else {
+        override(obj[key], toObj[key]);
+      }
     }
   }
 }
