@@ -73,7 +73,7 @@ export async function read_text_file(dir: string, file: string) {
 export async function read_zip_entries(dir: string, file: string) {
   const url = new URL('/file/read_zip_entries', window.location.origin);
   const file_path = path.join(dir, file);
-  let resp = await post(url.toString(), { file: file_path });
+  let resp = await post(url.toString(), { file: file_path }, 'read_zip_entries');
   return resp.data;
 }
 

@@ -1,0 +1,82 @@
+import { observer } from "mobx-react-lite"
+import { useState } from "react";
+import { resetPassword } from "../../apis/auth";
+import Button from "../../components/button";
+import Checkbox from "../../components/checkbox";
+import { Popover } from "../../components/popover";
+import { setting, Setting } from "../../store";
+import style from './index.module.less';
+
+interface IProps {
+  setting: Setting,
+}
+
+function SettingPage() {
+  const [tabName, setTabName] = useState<menuKey>(Object.keys(menu)[0] as menuKey);
+  return <div className={style['setting-page']}>
+    <div className={style['left-bar']}>
+      {
+        Object.keys(menu).map((name: any) => {
+          return <div key={name} className={style['menu-item']} onClick={() => setTabName(name)}>{name}</div>
+        })
+      }
+    </div>
+    <div className={style['info-page']}>
+      {menu[tabName]}
+    </div>
+  </div>
+}
+
+export default SettingPage;
+
+type menuKey = keyof typeof menu;
+
+const DownloadSetting = observer(({ setting }: IProps) => {
+  const [rpcUrl, setRpcUrl] = useState(setting.download.aria2RpcUrl);
+  return <div>
+    <div className={style['setting-item']}>
+      <span>Enable Aria2 download link: </span>
+      <Checkbox className={style.checkbox} checked={setting.download.aria2Enabled} onChange={checked => {
+        if (checked) setting.enableAria2();
+        else setting.disableAria2();
+      }} />
+    </div>
+    <div className={style['setting-item']}>
+      <span>Aria2RPC URL: </span>
+      <input style={{ width: 250 }} className={style.input} type="text" placeholder="e.g. http://localhost:6800/jsonrpc" value={rpcUrl} onChange={e => setRpcUrl(e.target.value)} />
+      <Button style={{ fontSize: 12 }} onClick={() => {
+        setting.setAria2RPCUrl(rpcUrl);
+      }}>Save</Button>
+    </div>
+  </div>
+});
+
+function UserSetting() {
+
+  const [pwds, setPwds] = useState(['', ''] as [string, string]);
+  return <div>
+    <div className={style['setting-item']}>
+      <span>Change Password: </span>
+      <input className={style.input} type="text" placeholder="old password" value={pwds[0]} onChange={e => setPwds([e.target.value, pwds[1]])} />
+      <input className={style.input} type="text" placeholder="new password" value={pwds[1]} onChange={e => setPwds([pwds[0], e.target.value])} />
+      <Popover inline auto content={
+        <div style={{ lineHeight: '35px', fontSize: 12, padding: '0 10px' }}>
+          This operation requires to refresh page and login again
+          <Button type="danger" onClick={async () => {
+            let success = await resetPassword(...pwds);
+            if (success) {
+              window.location.pathname = '/';
+            }
+          }} style={{ fontSize: 12 }}>Yes</Button>
+        </div>
+      }>
+        <Button style={{ fontSize: 12 }}>Confirm</Button>
+      </Popover>
+    </div>
+  </div>
+}
+
+const menu = {
+  Download: <DownloadSetting setting={setting} />,
+  User: <UserSetting />
+}

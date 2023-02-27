@@ -9,6 +9,7 @@ export const lightVars = {
   '--bg-heavy-hover': '#eee',
   '--font-color': '#000',
   '--border-color': '#eee',
+  '--border-color-strong': '#aaa',
   '--checkbox-bg': '#fff',
 };
 
@@ -23,5 +24,6 @@ export const darkVars = {
   '--bg-heavy-hover': '#555',
   '--font-color': '#eee',
   '--border-color': '#535353',
+  '--border-color-strong': '#aaa',
   '--checkbox-bg': '#555',
 };
