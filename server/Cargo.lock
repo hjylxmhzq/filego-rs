@@ -919,6 +919,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ffmpeg_cli_utils"
+version = "0.1.0"
+source = "git+https://github.com/hjylxmhzq/ffmpeg-cli-utils.git#2a3cabdafd8e8d3363f555fc85cd0a41338735e1"
+dependencies = [
+ "futures",
+ "lazy_static",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "flate2"
 version = "1.0.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1973,6 +1984,7 @@ dependencies = [
  "diesel_migrations",
  "dotenv",
  "env_logger",
+ "ffmpeg_cli_utils",
  "futures",
  "futures-util",
  "image",

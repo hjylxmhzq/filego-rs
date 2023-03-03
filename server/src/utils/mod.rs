@@ -5,7 +5,7 @@ pub mod parser;
 pub mod crypto;
 pub mod session;
 pub mod auth;
-pub mod transform;
+pub mod transcode;
 pub mod stream;
 pub mod path;
 

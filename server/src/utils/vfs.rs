@@ -12,13 +12,13 @@ use std::str::FromStr;
 use std::time::UNIX_EPOCH;
 use std::{fs::Metadata, io, path::PathBuf};
 use tokio::fs::{self, File};
-use tokio::io::{duplex, AsyncSeekExt, DuplexStream};
+use tokio::io::{duplex, AsyncSeekExt, DuplexStream, AsyncRead};
 use tokio_util::io::ReaderStream;
 
 use super::error::AppError;
 use super::path::secure_join;
 use super::stream::RangeStream;
-use super::transform::ffmpeg_scale;
+use super::transcode::ffmpeg_scale;
 
 pub async fn read_dir(
   file_root: &PathBuf,
@@ -119,7 +119,7 @@ pub async fn read_video_transform_stream(
   file: String,
   resize: Option<u32>,
   bitrate: Option<u32>,
-) -> Result<DuplexStream, AppError> {
+) -> Result<impl AsyncRead, AppError> {
   let dir = normailze_path(&file_root, &user_root, &file)?;
   let resize = resize.map_or(720, |v| v);
   let bitrate = bitrate.map_or(2000, |v| v);
