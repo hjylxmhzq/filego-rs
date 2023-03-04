@@ -11,7 +11,10 @@ interface Props {
 }
 
 export default function Button(props: Props) {
-  return <button style={{ height: props.height || 'auto', ...(props.style || {}) }} className={classNames(style.btn, { [style.danger]: props.type === 'danger' })} onClick={props.onClick}>{props.children}</button>
+  const onClick: MouseEventHandler = function (this: any, e) {
+    props.onClick?.call(this, e);
+  };
+  return <button style={{ height: props.height || 'auto', ...(props.style || {}) }} className={classNames(style.btn, { [style.danger]: props.type === 'danger' })} onClick={onClick}>{props.children}</button>
 }
 
 export function AnimationButton(props: Props) {

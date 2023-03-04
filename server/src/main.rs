@@ -2,6 +2,7 @@ use crate::utils::error::AppError;
 use actix_web::dev::Service;
 use actix_web::{self, web, App, HttpServer};
 use dotenv::dotenv;
+use schedulers::update_gallery::JOB_UPDATE_GALLERY;
 use serde::{Deserialize, Serialize};
 use std::{
   collections::HashMap,
@@ -18,12 +19,15 @@ mod middlewares;
 pub mod models;
 mod routers;
 pub mod schema;
+mod schedulers;
 mod utils;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
+
+mod db;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserSessionData {
@@ -96,6 +100,7 @@ async fn main() -> std::io::Result<()> {
       .app_data(web::Data::new(app_state.clone()))
       .service(routers::fs::file_routers())
       .service(routers::auth::auth_routers())
+      .service(routers::gallery::gallery_routers())
       .service(routers::index::index_routers())
       .wrap(middlewares::static_server::static_server())
       .wrap_fn(move |req, srv| {
@@ -124,6 +129,7 @@ async fn main() -> std::io::Result<()> {
 }
 
 fn init() -> AppState {
+  
   dotenv().map_or_else(
     |_| {
       error!("can not find .env file, use default value");
@@ -132,48 +138,55 @@ fn init() -> AppState {
       info!("find .env file at {v:?}");
     },
   );
-
+  
   let port: i32 = std::env::var("PORT")
-    .unwrap_or("7001".to_string())
-    .parse()
-    .unwrap();
+  .unwrap_or("7001".to_string())
+  .parse()
+  .unwrap();
 
-  let host = std::env::var("HOST").unwrap_or("127.0.0.1".to_string());
-  let file_root = std::env::var("FILE_ROOT").unwrap_or("files".to_string());
-  let static_root = "static";
-  let mut abs_file_root = env::current_dir().unwrap();
-  let mut abs_static_root = env::current_dir().unwrap();
-  abs_file_root.push(file_root);
-  abs_static_root.push(static_root);
-  fs::create_dir_all(&abs_file_root).unwrap();
+let host = std::env::var("HOST").unwrap_or("127.0.0.1".to_string());
+let file_root = std::env::var("FILE_ROOT").unwrap_or("files".to_string());
+let static_root = "static";
+let mut abs_file_root = env::current_dir().unwrap();
+let mut abs_static_root = env::current_dir().unwrap();
+abs_file_root.push(file_root);
+abs_static_root.push(static_root);
+fs::create_dir_all(&abs_file_root).unwrap();
 
-  let mut conn = connect_db();
+let mut conn = connect_db();
+run_migrations(&mut conn);
 
-  auto_create_user(&mut conn);
+JOB_UPDATE_GALLERY.lock().unwrap().set_file_root(&abs_file_root);
+JOB_UPDATE_GALLERY.lock().unwrap().init(1200).unwrap();
 
-  let state = AppState {
-    config: AppConfig {
-      file_root: abs_file_root,
-      static_root: abs_static_root,
-      port,
-      host: host.clone(),
-    },
-    session: AppSession {
-      users: HashMap::new(),
-    },
+auto_create_user(&mut conn);
+
+let state = AppState {
+  config: AppConfig {
+    file_root: abs_file_root,
+    static_root: abs_static_root,
+    port,
+    host: host.clone(),
+  },
+  session: AppSession {
+    users: HashMap::new(),
+  },
     db: Mutex::new(conn),
   };
 
   state
 }
 
-fn connect_db() -> SqliteConnection {
-  let database_url = env::var("DATABASE_URL").unwrap_or("sqlite://./app.db".to_owned());
-  let mut conn =
-    SqliteConnection::establish(&database_url).expect("can not establish database connection");
+pub fn run_migrations(conn: &mut SqliteConnection) {
   info!("database is connected");
   info!("running migrations");
-  MigrationHarness::run_pending_migrations(&mut conn, MIGRATIONS).unwrap();
+  MigrationHarness::run_pending_migrations(conn, MIGRATIONS).unwrap();
   info!("migrations finished");
+}
+
+pub fn connect_db() -> SqliteConnection {
+  let database_url = env::var("DATABASE_URL").unwrap_or("sqlite://./app.db".to_owned());
+  let conn =
+    SqliteConnection::establish(&database_url).expect("can not establish database connection");
   conn
 }

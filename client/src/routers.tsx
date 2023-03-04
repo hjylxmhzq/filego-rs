@@ -1,5 +1,6 @@
 import { RouteObject } from 'react-router';
 import FilePage from './pages/file';
+import GalleryPage from './pages/gallery';
 import { HomePage } from './pages/home';
 import LoginPage from './pages/login';
 import SettingPage from './pages/setting';
@@ -16,6 +17,10 @@ const routers: RouteObject[] = [
       {
         path: '/setting',
         element: <SettingPage />
+      },
+      {
+        path: '/gallery',
+        element: <GalleryPage />
       },
       {
         path: '',

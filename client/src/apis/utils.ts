@@ -46,3 +46,6 @@ export async function post_formdata(api: string, body: FormData, onUploadProgres
   let resp = await axios.postForm(api, body, { responseType: 'json', onUploadProgress });
   return resp.data;
 }
+
+
+(window as any).__post = post;

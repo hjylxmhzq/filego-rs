@@ -6,7 +6,10 @@ export default function Header() {
   const history = useNavigate();
 
   return <div className={style.header}>
-    <span onClick={() => history('/')}>File</span>
+    <nav>
+      <span className={style['menu-item']} onClick={() => history('/')}>File</span>
+      <span className={style['menu-item']} onClick={() => history('/gallery')}>Gallery</span>
+    </nav>
     <span>
       <span onClick={async () => {
         await logout();

@@ -47,6 +47,12 @@ export function create_download_link(dir: string, file: string) {
   return url.toString();
 }
 
+export function create_download_link_from_file_path(abs_file: string) {
+  const url = new URL('/file/read', window.location.origin);
+  url.searchParams.set('file', abs_file);
+  return url.toString();
+}
+
 export function create_thumbnail_link(dir: string, file: string) {
   const url = new URL('/file/read_image', window.location.origin);
   const file_path = path.join(dir, file);

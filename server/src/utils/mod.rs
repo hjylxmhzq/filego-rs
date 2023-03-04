@@ -8,6 +8,7 @@ pub mod auth;
 pub mod transcode;
 pub mod stream;
 pub mod path;
+pub mod gallery;
 
 #[cfg(debug_assertions)]
 pub mod performance;

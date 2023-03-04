@@ -9,7 +9,7 @@ edition = "2021"
 dotenv = "0.15.0"
 serde = { version = "1", features = ["derive", "alloc", "rc"] }
 tokio = { version = "1.23.0", features = ["full"] }
-diesel = { version = "2", features = ["sqlite"] }
+diesel = { version = "2", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
 actix-web = "4"
 serde_json = "1.0.92"
 mime_guess = "2.0.4"
@@ -35,6 +35,9 @@ percent-encoding = "2.2.0"
 pin-project-lite = "0.2.9"
 tracing = { version = "0.1.37", features = ["default"] }
 tracing-subscriber = "0.3.16"
+clokwerk = "0.4.0"
+chrono = "0.4.23"
+walkdir = "2.3.2"
 
 [dependencies.ffmpeg_cli_utils]
 git = "https://github.com/hjylxmhzq/ffmpeg-cli-utils.git"
