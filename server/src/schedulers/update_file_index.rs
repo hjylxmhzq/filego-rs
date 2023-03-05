@@ -5,10 +5,9 @@ use serde::Serialize;
 use std::{
   collections::HashSet,
   path::PathBuf,
-  str::FromStr,
   sync::{Arc, Mutex, RwLock},
   thread::{self, sleep},
-  time::{Duration, SystemTime, UNIX_EPOCH},
+  time::{Duration, SystemTime, UNIX_EPOCH}, env,
 };
 use walkdir::WalkDir;
 
@@ -144,7 +143,8 @@ impl UpdateGalleryJob {
       .as_millis()
       .to_string();
     let mut images = vec![];
-    for entry in WalkDir::new(&file_root) {
+    let follow_link = env::var("INDEXING_FOLLOW_LINK").map_or(true, |f| {f == "true"});
+    for entry in WalkDir::new(&file_root).follow_links(follow_link) {
       let entry = entry.unwrap();
       let dir = entry.path().strip_prefix(file_root.clone()).unwrap();
       images.push(dir.to_string_lossy().to_string());
