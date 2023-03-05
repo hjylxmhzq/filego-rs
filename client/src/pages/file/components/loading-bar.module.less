@@ -2,13 +2,22 @@
   overflow: hidden;
   position: relative;
   height: 2px;
+
   &::before {
     display: block;
     content: '';
     height: 2px;
     position: absolute;
     background-color: aqua;
-    animation: loading 2s infinite linear;
+    animation: 0;
+    opacity: 0;
+  }
+
+  &.is-loading {
+    &::before {
+      opacity: 1;
+      animation: loading 2s infinite linear;
+    }
   }
 }
 
@@ -17,6 +26,7 @@
     width: 20%;
     left: -20%;
   }
+
   to {
     width: 20%;
     left: 100%;

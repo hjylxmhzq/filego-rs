@@ -2,7 +2,7 @@ use crate::utils::error::AppError;
 use actix_web::dev::Service;
 use actix_web::{self, web, App, HttpServer};
 use chrono::NaiveTime;
-use dotenv::dotenv;
+use config::APP_CONFIG;
 use schedulers::update_file_index::JOB_UPDATE_GALLERY;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -14,7 +14,7 @@ use std::{
   sync::{Arc, RwLock},
 };
 use tokio::sync::Mutex;
-use tracing::log::{error, info};
+use tracing::log::info;
 use utils::auth::auto_create_user;
 mod middlewares;
 pub mod models;
@@ -27,7 +27,7 @@ use diesel::sqlite::SqliteConnection;
 
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
-
+mod config;
 mod db;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -88,7 +88,7 @@ async fn main() -> std::io::Result<()> {
   info!("server start on {addr:?}");
 
   HttpServer::new(move || {
-    let upload_temp_dir = std::env::var("UPLOAD_TEMPDIR").ok();
+    let upload_temp_dir = config!(upload_temp_dir);
     let awmp_config;
     if let Some(upload_temp_dir) = upload_temp_dir {
       utils::vfs::ensure_dir_sync(&upload_temp_dir);
@@ -130,22 +130,12 @@ async fn main() -> std::io::Result<()> {
 }
 
 fn init() -> AppState {
-  dotenv().map_or_else(
-    |_| {
-      error!("can not find .env file, use default value");
-    },
-    |v| {
-      info!("find .env file at {v:?}");
-    },
-  );
+  APP_CONFIG.lock().unwrap().init();
 
-  let port: i32 = std::env::var("PORT")
-    .unwrap_or("7001".to_string())
-    .parse()
-    .unwrap();
+  let port: i32 = config!(port);
 
-  let host = std::env::var("HOST").unwrap_or("127.0.0.1".to_string());
-  let file_root = std::env::var("FILE_ROOT").unwrap_or("files".to_string());
+  let host = config!(host);
+  let file_root = config!(file_root);
   let static_root = "static";
   let mut abs_file_root = env::current_dir().unwrap();
   let mut abs_static_root = env::current_dir().unwrap();
@@ -192,7 +182,7 @@ pub fn run_migrations(conn: &mut SqliteConnection) {
 }
 
 pub fn connect_db() -> SqliteConnection {
-  let database_url = env::var("DATABASE_URL").unwrap_or("sqlite://./app.db".to_owned());
+  let database_url = config!(database_url);
   let conn =
     SqliteConnection::establish(&database_url).expect("can not establish database connection");
   conn
