@@ -85,6 +85,12 @@ export async function read_zip_entries(dir: string, file: string) {
   return resp.data;
 }
 
+export async function search_files(keyword: string) {
+  const url = new URL('/file/search', window.location.origin);
+  let resp = await post(url.toString(), { keyword }, 'search_files');
+  return resp.data;
+}
+
 export async function upload_file(dir: string, files: File[], config?: { onUploadProgress?: (e: AxiosProgressEvent, info: { text: string }) => void }) {
   const url = new URL('/file/upload', window.location.origin);
 

@@ -8,7 +8,7 @@ export default function Header() {
   return <div className={style.header}>
     <nav>
       <span className={style['menu-item']} onClick={() => history('/')}>File</span>
-      <span className={style['menu-item']} onClick={() => history('/gallery')}>Gallery</span>
+      <span className={style['menu-item']} onClick={() => history('/page/gallery')}>Gallery</span>
     </nav>
     <span>
       <span onClick={async () => {

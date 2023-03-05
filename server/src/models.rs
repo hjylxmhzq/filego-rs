@@ -24,25 +24,29 @@ pub struct NewUser<'a> {
 }
 
 #[derive(Insertable, Debug)]
-#[diesel(table_name = gallery_images)]
-pub struct NewGalleryImage {
+#[diesel(table_name = file_index)]
+pub struct NewFileIndex {
+  pub file_name: String,
   pub file_path: String,
   pub username: String,
-  pub size: i32,
-  pub width: Option<i32>,
-  pub height: Option<i32>,
+  pub size: i64,
+  pub created_at: i64,
+  pub modified_at: i64,
   pub format: Option<String>,
+  pub is_dir: bool,
   pub updated_at: String,
 }
 
 #[derive(Queryable, Debug, Serialize)]
-#[diesel(table_name = gallery_images)]
-pub struct GalleryImage {
+#[diesel(table_name = file_index)]
+pub struct FileIndex {
+  pub file_name: String,
   pub file_path: String,
   pub username: String,
-  pub size: i32,
-  pub width: Option<i32>,
-  pub height: Option<i32>,
+  pub size: i64,
+  pub created_at: i64,
+  pub modified_at: i64,
   pub format: Option<String>,
+  pub is_dir: bool,
   pub updated_at: String,
 }

@@ -1,8 +1,9 @@
 use crate::utils::error::AppError;
 use actix_web::dev::Service;
 use actix_web::{self, web, App, HttpServer};
+use chrono::NaiveTime;
 use dotenv::dotenv;
-use schedulers::update_gallery::JOB_UPDATE_GALLERY;
+use schedulers::update_file_index::JOB_UPDATE_GALLERY;
 use serde::{Deserialize, Serialize};
 use std::{
   collections::HashMap,
@@ -18,8 +19,8 @@ use utils::auth::auto_create_user;
 mod middlewares;
 pub mod models;
 mod routers;
-pub mod schema;
 mod schedulers;
+pub mod schema;
 mod utils;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
@@ -129,7 +130,6 @@ async fn main() -> std::io::Result<()> {
 }
 
 fn init() -> AppState {
-  
   dotenv().map_or_else(
     |_| {
       error!("can not find .env file, use default value");
@@ -138,39 +138,46 @@ fn init() -> AppState {
       info!("find .env file at {v:?}");
     },
   );
-  
+
   let port: i32 = std::env::var("PORT")
-  .unwrap_or("7001".to_string())
-  .parse()
-  .unwrap();
+    .unwrap_or("7001".to_string())
+    .parse()
+    .unwrap();
 
-let host = std::env::var("HOST").unwrap_or("127.0.0.1".to_string());
-let file_root = std::env::var("FILE_ROOT").unwrap_or("files".to_string());
-let static_root = "static";
-let mut abs_file_root = env::current_dir().unwrap();
-let mut abs_static_root = env::current_dir().unwrap();
-abs_file_root.push(file_root);
-abs_static_root.push(static_root);
-fs::create_dir_all(&abs_file_root).unwrap();
+  let host = std::env::var("HOST").unwrap_or("127.0.0.1".to_string());
+  let file_root = std::env::var("FILE_ROOT").unwrap_or("files".to_string());
+  let static_root = "static";
+  let mut abs_file_root = env::current_dir().unwrap();
+  let mut abs_static_root = env::current_dir().unwrap();
+  abs_file_root.push(file_root);
+  abs_static_root.push(static_root);
+  fs::create_dir_all(&abs_file_root).unwrap();
 
-let mut conn = connect_db();
-run_migrations(&mut conn);
+  let mut conn = connect_db();
+  run_migrations(&mut conn);
 
-JOB_UPDATE_GALLERY.lock().unwrap().set_file_root(&abs_file_root);
-JOB_UPDATE_GALLERY.lock().unwrap().init(1200).unwrap();
+  JOB_UPDATE_GALLERY
+    .lock()
+    .unwrap()
+    .set_file_root(&abs_file_root);
+  JOB_UPDATE_GALLERY
+    .lock()
+    .unwrap()
+    .init(NaiveTime::from_hms_opt(3, 0, 0).unwrap())
+    .unwrap();
 
-auto_create_user(&mut conn);
+  auto_create_user(&mut conn);
 
-let state = AppState {
-  config: AppConfig {
-    file_root: abs_file_root,
-    static_root: abs_static_root,
-    port,
-    host: host.clone(),
-  },
-  session: AppSession {
-    users: HashMap::new(),
-  },
+  let state = AppState {
+    config: AppConfig {
+      file_root: abs_file_root,
+      static_root: abs_static_root,
+      port,
+      host: host.clone(),
+    },
+    session: AppSession {
+      users: HashMap::new(),
+    },
     db: Mutex::new(conn),
   };
 

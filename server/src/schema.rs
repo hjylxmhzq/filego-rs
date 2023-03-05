@@ -1,13 +1,15 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    gallery_images (file_path) {
+    file_index (file_path) {
+        file_name -> Text,
         file_path -> Text,
         username -> Text,
-        size -> Integer,
-        width -> Nullable<Integer>,
-        height -> Nullable<Integer>,
+        size -> BigInt,
+        created_at -> BigInt,
+        modified_at -> BigInt,
         format -> Nullable<Text>,
+        is_dir -> Bool,
         updated_at -> Text,
     }
 }
@@ -23,6 +25,6 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    gallery_images,
+    file_index,
     users,
 );

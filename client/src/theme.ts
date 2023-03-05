@@ -11,6 +11,7 @@ export const lightVars = {
   '--border-color': '#eee',
   '--border-color-strong': '#aaa',
   '--checkbox-bg': '#fff',
+  '--font-color-light': '#555'
 };
 
 export const darkVars = {
@@ -26,4 +27,5 @@ export const darkVars = {
   '--border-color': '#535353',
   '--border-color-strong': '#aaa',
   '--checkbox-bg': '#555',
+  '--font-color-light': '#555'
 };

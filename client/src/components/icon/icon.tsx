@@ -3,7 +3,6 @@ import '../../icons/icons';
 import './icon.less';
 import classnames from 'classnames';
 import mime from 'mime';
-import { FileStat } from '../../apis/file';
 
 export default function Icon({ name, size, className }: { className?: string, name: string, size?: number | string }) {
   return <svg className={classnames('icon', className)} aria-hidden="true" style={size ? { fontSize: size } : {}}>
@@ -11,7 +10,12 @@ export default function Icon({ name, size, className }: { className?: string, na
   </svg>
 }
 
-export function FileIcon(props: { className?: string, file: FileStat, size?: number | string }) {
+export interface IconFile {
+  is_dir: boolean,
+  name: string,
+}
+
+export function FileIcon(props: { className?: string, file: IconFile, size?: number | string }) {
   let filename = props.file.name;
   let guess = mime.getType(filename);
   let name = 'ziliao';

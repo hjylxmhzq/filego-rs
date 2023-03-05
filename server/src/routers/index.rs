@@ -1,11 +1,12 @@
-use actix_web::{web, Scope, HttpResponse};
+use actix_web::{web, HttpResponse, Scope};
 
-use crate::{utils::error::AppError, middlewares::static_server::get_file};
+use crate::{middlewares::static_server::get_file, utils::error::AppError};
 
 pub fn index_routers() -> Scope {
   web::scope("")
     .route("/", web::get().to(index))
     .route("/login", web::get().to(index))
+    .route("/page/{page}*", web::get().to(index))
 }
 
 pub async fn index() -> Result<HttpResponse, AppError> {

@@ -28,11 +28,13 @@ export default function GalleryPage() {
   const container = useRef<HTMLDivElement>(null);
   const [indexingStatus, setIndexingStatus] = useState(0);
 
+  async function loadImages() {
+    let images = await list_all_images();
+    setImages(images.data);
+  }
+
   useEffect(() => {
-    (async () => {
-      let images = await list_all_images();
-      setImages(images.data);
-    })();
+    loadImages();
   }, []);
 
   useEffect(() => {
@@ -59,6 +61,8 @@ export default function GalleryPage() {
     if (status.data.Running !== undefined) {
       setIndexingStatus(status.data.Running);
       setTimeout(update, 1000);
+    } else {
+      loadImages();
     }
   }
 

@@ -70,9 +70,7 @@ pub async fn fs_actions(
 
   match action.as_str() {
     "read_dir" => {
-      let files = vfs::read_dir(file_root, user_root, file)
-        .await
-        .unwrap();
+      let files = vfs::read_dir(file_root, user_root, file).await.unwrap();
 
       let resp = GetFilesOfDirResp { files };
 
@@ -80,9 +78,7 @@ pub async fn fs_actions(
     }
 
     "create_dir" => {
-      vfs::create_dir(file_root, user_root, file)
-        .await
-        .unwrap();
+      vfs::create_dir(file_root, user_root, file).await.unwrap();
 
       Ok(create_resp(true, EmptyResponseData::new(), ""))
     }
@@ -96,8 +92,7 @@ pub async fn fs_actions(
     }
 
     "read_compression" => {
-      let stream =
-        read_to_zip_stream(file_root, user_root, file).await?;
+      let stream = read_to_zip_stream(file_root, user_root, file).await?;
       let resp = create_unsized_stream_resp(
         stream,
         Some("application/zip".to_string()),
@@ -109,13 +104,7 @@ pub async fn fs_actions(
     "read" => {
       let file_stat = vfs::stat(file_root, user_root, file).await?;
       let (range_start, range_end, is_range) = parse_range(headers, file_stat.size)?;
-      let stream = read_file_stream(
-        file_root,
-        user_root,
-        file,
-        (range_start, range_end),
-      )
-      .await?;
+      let stream = read_file_stream(file_root, user_root, file, (range_start, range_end)).await?;
       let mime = mime_guess::from_path(file.to_owned())
         .first()
         .map(|m| m.to_string());
@@ -293,9 +282,23 @@ pub async fn read_video_transcode_get(
   ))
 }
 
+#[derive(Deserialize)]
+pub struct SearchFilesReq {
+  keyword: String,
+}
+
+pub async fn search(body: web::Json<SearchFilesReq>) -> Result<HttpResponse, AppError> {
+  let kw = body.keyword.clone();
+
+  let r = vfs::search_in_index(&kw).await?;
+
+  Ok(create_resp(true, r, "done"))
+}
+
 pub fn file_routers() -> Scope {
   web::scope("/file")
     .route("/upload", web::post().to(upload))
+    .route("/search", web::post().to(search))
     .route("/delete_batch", web::post().to(delete_batch))
     .route("/read_image", web::post().to(read_image_post))
     .route("/read_image", web::get().to(read_image_get))

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import events from 'events';
 
 export function useRefresh(): [number, () => void] {
@@ -48,4 +48,30 @@ export function useTheme(): [Theme, (theme: Theme) => void, () => void] {
     }
   }, [setTheme]);
   return [theme, setTheme, toggle];
+}
+
+
+export function useDebounceValue(val: any, delay = 100) {
+  const timer = useRef<undefined | number>(undefined);
+  const [pending, setPending] = useState(false);
+  const [debouncedVal, setDebouncedVal] = useState(val);
+  const lastVal = useRef(val);
+  useEffect(() => {
+    if (!timer.current) {
+      setDebouncedVal(val);
+    }
+    if (lastVal.current === val) {
+      return;
+    }
+    lastVal.current = val;
+    setPending(true);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      setDebouncedVal(val);
+      setPending(false);
+      timer.current = undefined;
+    }, delay);
+    return;
+  }, [val, delay]);
+  return [debouncedVal, pending] as [any, boolean];
 }

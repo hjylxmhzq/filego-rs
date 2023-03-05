@@ -19,7 +19,7 @@ const routers: RouteObject[] = [
         element: <SettingPage />
       },
       {
-        path: '/gallery',
+        path: '/page/gallery',
         element: <GalleryPage />
       },
       {

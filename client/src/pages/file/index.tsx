@@ -17,6 +17,7 @@ import Modal from "../../components/modal";
 import { FileIcon } from "../../components/icon/icon";
 import Checkbox from "../../components/checkbox";
 import { setting } from "../../store";
+import SearchInput from "./components/search-input";
 
 export default function FilePage() {
   let [files, setFiles] = useState<any[]>([]);
@@ -32,6 +33,9 @@ export default function FilePage() {
   const history = useNavigate();
 
   const gotoDir = useCallback((dir: string = currentDir) => {
+    if (dir === '.') {
+      dir = ''
+    }
     history('/', { state: { currentDir: dir } });
   }, [currentDir, history]);
 
@@ -144,6 +148,7 @@ export default function FilePage() {
           <div className={style['header-bar']}>
             <Breadcumb onJumpPath={(p) => gotoDir(p)} currentPath={currentPath} />
             <div className={style['header-actions']}>
+              <SearchInput onClick={file => gotoDir(file.dir)} />
               <Button onClick={async () => {
                 showAddFolder();
               }}>新建文件夹</Button>

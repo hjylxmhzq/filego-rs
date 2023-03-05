@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite"
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { resetPassword } from "../../apis/auth";
+import { update_index, get_job_status } from "../../apis/gallery";
 import Button from "../../components/button";
 import Checkbox from "../../components/checkbox";
 import { Popover } from "../../components/popover";
@@ -35,6 +36,21 @@ type menuKey = keyof typeof menu;
 const DownloadSetting = observer(({ setting }: IProps) => {
   const [rpcUrl, setRpcUrl] = useState(setting.download.aria2RpcUrl);
   const [rpcToken, setRpcToken] = useState(setting.download.aria2RpcToken);
+  const [updatedCount, setUpdatedCount] = useState(0);
+
+  async function updateIndexingStatus() {
+    let status = await get_job_status();
+    if (status.data.Running !== undefined) {
+      setUpdatedCount(status.data.Running);
+      setTimeout(updateIndexingStatus, 1000);
+    }
+  }
+
+  useEffect(() => {
+    updateIndexingStatus();
+    // eslint-disable-next-line
+  }, []);
+
   return <div>
     <div>Aria2 Configuration</div>
     <div className={style['setting-section']}>
@@ -82,6 +98,21 @@ const DownloadSetting = observer(({ setting }: IProps) => {
         <Checkbox className={style.checkbox} checked={setting.preview.pdfPreviewEnabled} onChange={checked => {
           setting.enablePdfPreview(checked);
         }} />
+      </div>
+    </div>
+    <div>File Indexing</div>
+    <div className={style['setting-section']}>
+      <div className={style['setting-item']}>
+        <span>Update Files Index: </span>
+        <Button style={{ fontSize: 12 }} onClick={async () => {
+          await update_index();
+          await updateIndexingStatus();
+        }}>Update</Button>
+      </div>
+      <div className={style['setting-item']}>
+        {
+          updatedCount > 0 && <span>Updated: {updatedCount} files</span>
+        }
       </div>
     </div>
   </div>

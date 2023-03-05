@@ -1,1 +1,1 @@
-pub mod update_gallery;
+pub mod update_file_index;

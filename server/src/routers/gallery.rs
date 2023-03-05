@@ -1,4 +1,4 @@
-use crate::schedulers::update_gallery::JOB_UPDATE_GALLERY;
+use crate::schedulers::update_file_index::JOB_UPDATE_GALLERY;
 use crate::utils::error::AppError;
 use crate::utils::gallery;
 use crate::utils::response::create_resp;

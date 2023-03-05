@@ -12,8 +12,11 @@ use std::str::FromStr;
 use std::time::UNIX_EPOCH;
 use std::{fs::Metadata, io, path::PathBuf};
 use tokio::fs::{self, File};
-use tokio::io::{duplex, AsyncSeekExt, DuplexStream, AsyncRead};
+use tokio::io::{duplex, AsyncRead, AsyncSeekExt, DuplexStream};
 use tokio_util::io::ReaderStream;
+
+use crate::db::SHARED_DB_CONN;
+use crate::models::FileIndex;
 
 use super::error::AppError;
 use super::path::secure_join;
@@ -130,6 +133,18 @@ pub async fn read_video_transform_stream(
 pub async fn create_dir(file_root: &PathBuf, user_root: &str, file: &str) -> Result<(), AppError> {
   let dir = normailze_path(&file_root, &user_root, &file)?;
   let result = fs::create_dir(dir).await?;
+  Ok(result)
+}
+
+pub async fn search_in_index(kw: &str) -> Result<Vec<FileIndex>, AppError> {
+  use crate::schema::file_index::dsl::*;
+  use diesel::prelude::*;
+
+  let mut conn = SHARED_DB_CONN.lock().unwrap();
+  let conn = &mut *conn;
+  let result = file_index
+    .filter(file_name.like(format!("%{kw}%")))
+    .load::<FileIndex>(conn)?;
   Ok(result)
 }
 
@@ -365,6 +380,9 @@ pub async fn read_entries_in_zip(
     parent_file_stat.borrow_mut().children.push(ref_file);
   }
   let root = root.ok_or(AppError::new("fail to read zip file"))?;
-  let root = file_map.get(&root).ok_or(AppError::new("fail to read zip file"))?.clone();
+  let root = file_map
+    .get(&root)
+    .ok_or(AppError::new("fail to read zip file"))?
+    .clone();
   Ok(root)
 }

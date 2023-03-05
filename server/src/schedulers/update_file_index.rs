@@ -1,9 +1,11 @@
-use clokwerk::{ScheduleHandle, Scheduler, TimeUnits};
+use chrono::NaiveTime;
+use clokwerk::{Job, ScheduleHandle, Scheduler, TimeUnits};
 use lazy_static::lazy_static;
 use serde::Serialize;
 use std::{
   collections::HashSet,
   path::PathBuf,
+  str::FromStr,
   sync::{Arc, Mutex, RwLock},
   thread::{self, sleep},
   time::{Duration, SystemTime, UNIX_EPOCH},
@@ -12,7 +14,7 @@ use walkdir::WalkDir;
 
 use crate::{
   db::SHARED_DB_CONN,
-  models::{GalleryImage, NewGalleryImage},
+  models::{FileIndex, NewFileIndex},
   utils::error::AppError,
 };
 
@@ -53,8 +55,8 @@ impl UpdateGalleryJob {
   }
 
   fn cleanup_db(updated_at_str: String) -> Result<(), AppError> {
-    use crate::schema::gallery_images::dsl::*;
-    use crate::schema::gallery_images::table;
+    use crate::schema::file_index::dsl::*;
+    use crate::schema::file_index::table;
     use diesel::prelude::*;
     let mut conn = SHARED_DB_CONN.lock().unwrap();
     let conn = &mut *conn;
@@ -65,36 +67,49 @@ impl UpdateGalleryJob {
     Ok(())
   }
 
-  fn insert_images_into_db(images: Vec<String>, now: String) -> Result<(), AppError> {
-    use crate::schema::gallery_images::dsl::*;
-    use crate::schema::gallery_images::table;
+  fn insert_files_into_db(
+    images: Vec<String>,
+    now: String,
+    file_root: &PathBuf,
+  ) -> Result<(), AppError> {
+    use crate::schema::file_index::dsl::*;
+    use crate::schema::file_index::table;
     use diesel::prelude::*;
 
     let mut conn = SHARED_DB_CONN.lock().unwrap();
     let conn = &mut *conn;
-    let exists = gallery_images
+    let exists = file_index
       .filter(file_path.eq_any(&images))
-      .load::<GalleryImage>(conn)?;
+      .load::<FileIndex>(conn)?;
 
-    diesel::update(gallery_images)
+    diesel::update(file_index)
       .filter(file_path.eq_any(&images))
       .set(updated_at.eq(now.clone()))
       .execute(conn)?;
 
     let set: HashSet<String> = exists.into_iter().map(|img| img.file_path).collect();
-    let to_insert: Vec<NewGalleryImage> = images
+    let to_insert: Vec<NewFileIndex> = images
       .into_iter()
       .filter(|img| {
         return !set.contains(img);
       })
-      .map(|f| NewGalleryImage {
-        file_path: f,
-        size: 0,
-        format: None,
-        username: "".to_owned(),
-        width: None,
-        height: None,
-        updated_at: now.clone(),
+      .map(|f| {
+        let p = file_root.join(&f);
+        let mime = mime_guess::from_path(&p);
+        let mime: Vec<_> = mime.into_iter().map(|m| m.to_string()).collect();
+        let meta = p.metadata().unwrap();
+
+        NewFileIndex {
+          file_name: p.file_name().unwrap().to_string_lossy().to_string(),
+          file_path: f,
+          size: meta.len() as i64,
+          format: Some(mime.join("|")),
+          username: "".to_owned(),
+          created_at: 0,
+          modified_at: 0,
+          updated_at: now.clone(),
+          is_dir: meta.is_dir(),
+        }
       })
       .collect();
     diesel::insert_into(table).values(to_insert).execute(conn)?;
@@ -132,27 +147,22 @@ impl UpdateGalleryJob {
     for entry in WalkDir::new(&file_root) {
       let entry = entry.unwrap();
       let dir = entry.path().strip_prefix(file_root.clone()).unwrap();
-      let guess = mime_guess::from_path(dir);
-      if let Some(mime) = guess.first() {
-        if mime.to_string().contains("image") {
-          images.push(dir.to_string_lossy().to_string());
-          if images.len() > 25 {
-            let len = images.len() as u64;
-            let to_insert = images.drain(..).collect();
-            Self::insert_images_into_db(to_insert, now.clone()).unwrap();
-            let mut status_lock = status.write().unwrap();
-            if let JobStatus::Running(sum) = *status_lock {
-              *status_lock = JobStatus::Running(sum + len);
-            }
-            sleep(std::time::Duration::from_millis(100));
-            drop(status_lock);
-          }
+      images.push(dir.to_string_lossy().to_string());
+      if images.len() > 25 {
+        let len = images.len() as u64;
+        let to_insert = images.drain(..).collect();
+        Self::insert_files_into_db(to_insert, now.clone(), &file_root).unwrap();
+        let mut status_lock = status.write().unwrap();
+        if let JobStatus::Running(sum) = *status_lock {
+          *status_lock = JobStatus::Running(sum + len);
         }
+        sleep(std::time::Duration::from_millis(200));
+        drop(status_lock);
       }
     }
     if images.len() > 0 {
       let len = images.len() as u64;
-      Self::insert_images_into_db(images, now.clone()).unwrap();
+      Self::insert_files_into_db(images, now.clone(), &file_root).unwrap();
       let mut status_lock = status.write().unwrap();
       if let JobStatus::Running(sum) = *status_lock {
         *status_lock = JobStatus::Running(sum + len);
@@ -162,7 +172,7 @@ impl UpdateGalleryJob {
     *status.write().unwrap() = JobStatus::Idle;
   }
 
-  pub fn init(&mut self, internal: u32) -> Result<(), AppError> {
+  pub fn init(&mut self, at_time: NaiveTime) -> Result<(), AppError> {
     self.stop();
     // Create a new scheduler
     let mut scheduler = Scheduler::new();
@@ -174,8 +184,7 @@ impl UpdateGalleryJob {
     let run = move || {
       Self::update(status.clone(), &file_root);
     };
-
-    scheduler.every(internal.seconds()).run(run);
+    scheduler.every(1.days()).at_time(at_time).run(run);
 
     // Or run it in a background thread
     let thread_handle = scheduler.watch_thread(Duration::from_millis(1000));
