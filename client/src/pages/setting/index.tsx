@@ -1,11 +1,14 @@
 import { observer } from "mobx-react-lite"
 import { useEffect, useState } from "react";
 import { resetPassword } from "../../apis/auth";
+import { get_file_index_updated_at, get_storage_info } from "../../apis/file";
 import { update_index, get_job_status } from "../../apis/gallery";
 import Button from "../../components/button";
 import Checkbox from "../../components/checkbox";
 import { Popover } from "../../components/popover";
 import { setting, Setting } from "../../store";
+import { formatTime } from "../../utils/formatter";
+import StoragePieChart from "./components/pie-chart";
 import style from './index.module.less';
 
 interface IProps {
@@ -37,17 +40,33 @@ const DownloadSetting = observer(({ setting }: IProps) => {
   const [rpcUrl, setRpcUrl] = useState(setting.download.aria2RpcUrl);
   const [rpcToken, setRpcToken] = useState(setting.download.aria2RpcToken);
   const [updatedCount, setUpdatedCount] = useState(0);
+  const [indexUpdatedAt, setIndexUpdatedAt] = useState(0);
+  const [storageInfo, setStorageInfo] = useState<any>([]);
 
   async function updateIndexingStatus() {
     let status = await get_job_status();
     if (status.data.Running !== undefined) {
       setUpdatedCount(status.data.Running);
       setTimeout(updateIndexingStatus, 1000);
+    } else {
+      await updateIndexUpdatedAtTime();
     }
+  }
+
+  async function updateIndexUpdatedAtTime() {
+    let updatedAt = await get_file_index_updated_at();
+    setIndexUpdatedAt(parseInt(updatedAt, 10));
+  }
+
+  async function updateStorageInfo() {
+    let storageInfo = await get_storage_info();
+    setStorageInfo(storageInfo);
   }
 
   useEffect(() => {
     updateIndexingStatus();
+    updateIndexUpdatedAtTime();
+    updateStorageInfo();
     // eslint-disable-next-line
   }, []);
 
@@ -113,6 +132,17 @@ const DownloadSetting = observer(({ setting }: IProps) => {
         {
           updatedCount > 0 && <span>Updated: {updatedCount} files</span>
         }
+      </div>
+      <div className={style['setting-item']}>
+        {
+          indexUpdatedAt > 0 && <span>Last updated time: {formatTime(indexUpdatedAt)}</span>
+        }
+      </div>
+    </div>
+    <div>Storage Layout</div>
+    <div className={style['setting-section']}>
+      <div className={style['setting-item']}>
+        <StoragePieChart items={storageInfo.filter((info: any) => !!info.format).map((info: any) => ({ size: info.size, name: info.format }))} />
       </div>
     </div>
   </div>

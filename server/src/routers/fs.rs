@@ -295,6 +295,17 @@ pub async fn search(body: web::Json<SearchFilesReq>) -> Result<HttpResponse, App
   Ok(create_resp(true, r, "done"))
 }
 
+pub async fn storage_info() -> Result<HttpResponse, AppError> {
+  let r = vfs::storage_info_group_by_file_mime("").await?;
+
+  Ok(create_resp(true, r, "done"))
+}
+
+pub async fn index_updated_at() -> Result<HttpResponse, AppError> {
+  let r = vfs::file_index_last_updated_time("").await?;
+  Ok(create_resp(true, r, "done"))
+}
+
 pub fn file_routers() -> Scope {
   web::scope("/file")
     .route("/upload", web::post().to(upload))
@@ -302,6 +313,8 @@ pub fn file_routers() -> Scope {
     .route("/delete_batch", web::post().to(delete_batch))
     .route("/read_image", web::post().to(read_image_post))
     .route("/read_image", web::get().to(read_image_get))
+    .route("/storage_info", web::post().to(storage_info))
+    .route("/index_updated_at", web::post().to(index_updated_at))
     .route(
       "/read_video_transcode",
       web::get().to(read_video_transcode_get),

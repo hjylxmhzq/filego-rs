@@ -37,7 +37,7 @@ pub struct NewFileIndex {
   pub updated_at: String,
 }
 
-#[derive(Queryable, Debug, Serialize)]
+#[derive(Queryable, Debug, Serialize, QueryableByName)]
 #[diesel(table_name = file_index)]
 pub struct FileIndex {
   pub file_name: String,
@@ -48,5 +48,20 @@ pub struct FileIndex {
   pub modified_at: i64,
   pub format: Option<String>,
   pub is_dir: bool,
+  pub updated_at: String,
+}
+
+#[derive(Queryable, Debug, Serialize, QueryableByName)]
+#[diesel(table_name = file_index)]
+pub struct FileIndexSizeCount {
+  pub size: i64,
+  pub username: String,
+  pub format: Option<String>,
+  pub is_dir: bool,
+}
+
+#[derive(Queryable, Debug, Serialize, QueryableByName)]
+#[diesel(table_name = file_index)]
+pub struct FileIndexLastUpdatedAt {
   pub updated_at: String,
 }

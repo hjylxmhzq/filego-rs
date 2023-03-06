@@ -91,6 +91,18 @@ export async function search_files(keyword: string) {
   return resp.data;
 }
 
+export async function get_file_index_updated_at() {
+  const url = new URL('/file/index_updated_at', window.location.origin);
+  let resp = await post(url.toString(), { }, 'file_index_updated_at');
+  return resp.data;
+}
+
+export async function get_storage_info() {
+  const url = new URL('/file/storage_info', window.location.origin);
+  let resp = await post(url.toString(), { }, 'storage_info');
+  return resp.data;
+}
+
 export async function upload_file(dir: string, files: File[], config?: { onUploadProgress?: (e: AxiosProgressEvent, info: { text: string }) => void }) {
   const url = new URL('/file/upload', window.location.origin);
 

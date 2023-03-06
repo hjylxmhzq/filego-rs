@@ -2,6 +2,8 @@ use actix_web::web::block;
 use async_zip::error::ZipError;
 use async_zip::write::ZipFileWriter;
 use async_zip::{Compression, ZipEntryBuilder};
+use diesel::sql_types::Text;
+use diesel::{sql_query, RunQueryDsl};
 use serde::Serialize;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -16,7 +18,7 @@ use tokio::io::{duplex, AsyncRead, AsyncSeekExt, DuplexStream};
 use tokio_util::io::ReaderStream;
 
 use crate::db::SHARED_DB_CONN;
-use crate::models::FileIndex;
+use crate::models::{FileIndex, FileIndexLastUpdatedAt, FileIndexSizeCount};
 
 use super::error::AppError;
 use super::path::secure_join;
@@ -42,6 +44,7 @@ pub async fn read_dir(
   }
   Ok(files_in_dir)
 }
+
 #[allow(unused)]
 pub async fn read_image(
   file_root: PathBuf,
@@ -214,6 +217,28 @@ pub async fn read_file_stream(
   let reader = ReaderStream::new(f);
   let reader = RangeStream::new(range.1 - range.0 + 1, reader);
   Ok(reader)
+}
+
+pub async fn storage_info_group_by_file_mime(
+  username_: &str,
+) -> Result<Vec<FileIndexSizeCount>, AppError> {
+  let conn = &mut *SHARED_DB_CONN.lock().unwrap();
+
+  let r = sql_query("select sum(size), size, format, is_dir, username from file_index where username = ? group by format;")
+    .bind::<Text, _>(username_)
+    .load::<FileIndexSizeCount>(conn)
+    .unwrap();
+  Ok(r)
+}
+
+pub async fn file_index_last_updated_time(username_: &str) -> Result<String, AppError> {
+  let conn = &mut *SHARED_DB_CONN.lock().unwrap();
+  use crate::schema::file_index::dsl::*;
+  use diesel::prelude::*;
+
+  let r = file_index.first::<FileIndex>(conn).map_or("".to_owned(), |v| v.updated_at);
+
+  Ok(r)
 }
 
 pub async fn read_to_zip_stream(

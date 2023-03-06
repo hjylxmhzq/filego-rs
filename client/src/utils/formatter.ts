@@ -19,3 +19,9 @@ export function formatFileSize(bytes: number, si=false, dp=1) {
 
   return bytes.toFixed(dp) + ' ' + units[u];
 }
+
+export function formatTime(timestamp: number) {
+  const t = new Date();
+  t.setTime(timestamp);
+  return t.toLocaleString();
+}
