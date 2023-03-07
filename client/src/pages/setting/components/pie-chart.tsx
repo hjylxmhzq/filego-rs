@@ -4,6 +4,7 @@
 import { Chart, Util } from '@antv/g2';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '../../../components/button';
+import { useTheme } from '../../../hooks/common';
 import { formatFileSize } from '../../../utils/formatter';
 
 
@@ -18,6 +19,7 @@ export default function StoragePieChart(props: IProps) {
   const [showType, setShowType] = useState(1);
   const total = useMemo(() => props.items.reduce((prev, item) => prev + item.size, 0), [props.items]);
   const totalSize = formatFileSize(total);
+  const [theme] = useTheme();
 
   useEffect(() => {
     if (!container.current) return;
@@ -81,13 +83,13 @@ export default function StoragePieChart(props: IProps) {
           offset: 20,
           style: {
             opacity: 1,
-            fill: 'white',
+            fill: theme === 'dark' ? 'white' : 'black',
             fontSize: 10,
-            shadowBlur: 2,
-            shadowColor: 'rgba(0, 0, 0, .45)',
+            shadowBlur: 3,
+            shadowColor:  theme === 'dark' ? 'black' : 'white',
           },
           content: (obj) => {
-            return obj.type + '\n' + obj.size;
+            return obj.type + ' (' + obj.size + ')';
           },
         };
       });
@@ -100,7 +102,7 @@ export default function StoragePieChart(props: IProps) {
       chart.destroy();
     }
     // eslint-disable-next-line
-  }, [props.items, showType]);
+  }, [props.items, showType, theme]);
 
   return <span style={{ display: 'inline-block' }}>
     <span>存储占用: {totalSize}</span>
