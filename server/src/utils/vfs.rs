@@ -287,7 +287,6 @@ pub async fn zip_path_to_stream(
     let meta = tokio::fs::metadata(base.join(file)).await?;
     if meta.is_file() {
       let s = file.to_str().unwrap().to_string();
-      #[cfg(debug_assertions)]
       let entry = ZipEntryBuilder::new(s, Compression::Stored).build();
       let mut w = writer.write_entry_stream(entry).await.unwrap();
       let mut f = tokio::fs::File::open(base.join(file)).await?;
