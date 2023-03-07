@@ -39,6 +39,9 @@ chrono = "0.4.23"
 walkdir = "2.3.2"
 toml = "0.7.2"
 clap = { version = "4.1.8", features = ["derive"] }
+tantivy = "0.19.2"
+pdf = "0.8.0"
+tantivy-jieba = "0.7.0"
 
 [dependencies.ffmpeg_cli_utils]
 git = "https://github.com/hjylxmhzq/ffmpeg-cli-utils.git"

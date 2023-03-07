@@ -1,13 +1,13 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    file_index (file_path) {
+    file_index (file_path, updated_at) {
         file_name -> Text,
         file_path -> Text,
         username -> Text,
         size -> BigInt,
-        created_at -> BigInt,
-        modified_at -> BigInt,
+        created_at -> Text,
+        modified_at -> Text,
         format -> Nullable<Text>,
         is_dir -> Bool,
         updated_at -> Text,

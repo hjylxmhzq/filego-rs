@@ -13,15 +13,17 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::time::UNIX_EPOCH;
 use std::{fs::Metadata, io, path::PathBuf};
+use tantivy::Document;
 use tokio::fs::{self, File};
 use tokio::io::{duplex, AsyncRead, AsyncSeekExt, DuplexStream};
 use tokio_util::io::ReaderStream;
 
 use crate::db::SHARED_DB_CONN;
-use crate::models::{FileIndex, FileIndexLastUpdatedAt, FileIndexSizeCount};
+use crate::models::{FileIndex, FileIndexSizeCount};
 
 use super::error::AppError;
 use super::path::secure_join;
+use super::search_engine::search_docs;
 use super::stream::RangeStream;
 use super::transcode::ffmpeg_scale;
 
@@ -151,6 +153,11 @@ pub async fn search_in_index(kw: &str) -> Result<Vec<FileIndex>, AppError> {
   Ok(result)
 }
 
+pub fn search_in_tantivy(kw: &str) -> Result<Vec<Document>, AppError> {
+  let docs = search_docs(kw)?;
+  Ok(docs)
+}
+
 #[derive(Serialize)]
 #[mixin::declare]
 pub struct FileStat {
@@ -236,7 +243,10 @@ pub async fn file_index_last_updated_time(username_: &str) -> Result<String, App
   use crate::schema::file_index::dsl::*;
   use diesel::prelude::*;
 
-  let r = file_index.first::<FileIndex>(conn).map_or("".to_owned(), |v| v.updated_at);
+  let r = file_index
+    .filter(username.is(username_))
+    .first::<FileIndex>(conn)
+    .map_or("".to_owned(), |v| v.updated_at);
 
   Ok(r)
 }
@@ -278,7 +288,6 @@ pub async fn zip_path_to_stream(
     if meta.is_file() {
       let s = file.to_str().unwrap().to_string();
       #[cfg(debug_assertions)]
-      println!("zip add entry: {s}");
       let entry = ZipEntryBuilder::new(s, Compression::Stored).build();
       let mut w = writer.write_entry_stream(entry).await.unwrap();
       let mut f = tokio::fs::File::open(base.join(file)).await?;

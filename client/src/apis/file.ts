@@ -91,6 +91,12 @@ export async function search_files(keyword: string) {
   return resp.data;
 }
 
+export async function search_files_content(keyword: string) {
+  const url = new URL('/file/search_content', window.location.origin);
+  let resp = await post(url.toString(), { keyword }, 'search_files_content');
+  return resp.data;
+}
+
 export async function get_file_index_updated_at() {
   const url = new URL('/file/index_updated_at', window.location.origin);
   let resp = await post(url.toString(), { }, 'file_index_updated_at');

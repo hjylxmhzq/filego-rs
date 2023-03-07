@@ -295,6 +295,12 @@ pub async fn search(body: web::Json<SearchFilesReq>) -> Result<HttpResponse, App
   Ok(create_resp(true, r, "done"))
 }
 
+pub async fn search_content(body: web::Json<SearchFilesReq>) -> Result<HttpResponse, AppError> {
+  let kw = body.keyword.clone();
+  let r = vfs::search_in_tantivy(&kw)?;
+  Ok(create_resp(true, r, "done"))
+}
+
 pub async fn storage_info() -> Result<HttpResponse, AppError> {
   let r = vfs::storage_info_group_by_file_mime("").await?;
 
@@ -310,6 +316,7 @@ pub fn file_routers() -> Scope {
   web::scope("/file")
     .route("/upload", web::post().to(upload))
     .route("/search", web::post().to(search))
+    .route("/search_content", web::post().to(search_content))
     .route("/delete_batch", web::post().to(delete_batch))
     .route("/read_image", web::post().to(read_image_post))
     .route("/read_image", web::get().to(read_image_get))

@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite"
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { resetPassword } from "../../apis/auth";
 import { get_file_index_updated_at, get_storage_info } from "../../apis/file";
 import { update_index, get_job_status } from "../../apis/gallery";
@@ -43,6 +43,12 @@ const DownloadSetting = observer(({ setting }: IProps) => {
   const [indexUpdatedAt, setIndexUpdatedAt] = useState(0);
   const [storageInfo, setStorageInfo] = useState<any>([]);
 
+  const convertedStorageInfo = useMemo(() => {
+    return storageInfo
+      .filter((info: any) => !!info.format)
+      .map((info: any) => ({ size: info.size, name: info.format }));
+  }, [storageInfo]);
+
   async function updateIndexingStatus() {
     let status = await get_job_status();
     if (status.data.Running !== undefined) {
@@ -50,6 +56,7 @@ const DownloadSetting = observer(({ setting }: IProps) => {
       setTimeout(updateIndexingStatus, 1000);
     } else {
       await updateIndexUpdatedAtTime();
+      await updateStorageInfo();
     }
   }
 
@@ -142,7 +149,7 @@ const DownloadSetting = observer(({ setting }: IProps) => {
     <div>Storage Layout</div>
     <div className={style['setting-section']}>
       <div className={style['setting-item']}>
-        <StoragePieChart items={storageInfo.filter((info: any) => !!info.format).map((info: any) => ({ size: info.size, name: info.format }))} />
+        <StoragePieChart items={convertedStorageInfo} />
       </div>
     </div>
   </div>
@@ -150,7 +157,7 @@ const DownloadSetting = observer(({ setting }: IProps) => {
 
 function UserSetting() {
 
-  const [pwds, setPwds] = useState(['', ''] as [string, string]);
+  const [pwds, setPwds] = useState(['', ''] as [string, string]); // [old_password, new_password]
   return <div>
     <div>Secure</div>
     <div className={style['setting-section']}>

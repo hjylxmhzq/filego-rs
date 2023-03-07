@@ -3,7 +3,7 @@ use clokwerk::{Job, ScheduleHandle, Scheduler, TimeUnits};
 use lazy_static::lazy_static;
 use serde::Serialize;
 use std::{
-  collections::HashSet,
+  collections::HashMap,
   path::PathBuf,
   sync::{Arc, Mutex, RwLock},
   thread::{self, sleep},
@@ -15,7 +15,11 @@ use crate::{
   config,
   db::SHARED_DB_CONN,
   models::{FileIndex, NewFileIndex},
-  utils::error::AppError,
+  utils::{
+    doc_parser::try_parse_sync,
+    error::AppError,
+    search_engine::{self, insert_docs, Doc},
+  },
 };
 
 lazy_static! {
@@ -60,10 +64,10 @@ impl UpdateGalleryJob {
     use diesel::prelude::*;
     let mut conn = SHARED_DB_CONN.lock().unwrap();
     let conn = &mut *conn;
-    let _ = diesel::delete(table.filter(updated_at.is_not(updated_at_str)))
+    let _ = diesel::delete(table.filter(updated_at.is_not(&updated_at_str)))
       .execute(conn)
       .unwrap();
-
+    search_engine::cleanup(&updated_at_str).unwrap();
     Ok(())
   }
 
@@ -82,31 +86,73 @@ impl UpdateGalleryJob {
       .filter(file_path.eq_any(&images))
       .load::<FileIndex>(conn)?;
 
-    diesel::update(file_index)
-      .filter(file_path.eq_any(&images))
-      .set(updated_at.eq(now.clone()))
-      .execute(conn)?;
+    // diesel::update(file_index)
+    //   .filter(file_path.eq_any(&images))
+    //   .set(updated_at.eq(now.clone()))
+    //   .execute(conn)?;
 
-    let set: HashSet<String> = exists.into_iter().map(|img| img.file_path).collect();
+    let set: HashMap<String, FileIndex> = exists
+      .into_iter()
+      .map(|img| (img.file_path.clone(), img))
+      .collect();
     let to_insert: Vec<NewFileIndex> = images
       .into_iter()
-      .filter(|img| {
-        return !set.contains(img);
-      })
       .map(|f| {
         let p = file_root.join(&f);
         let mime = mime_guess::from_path(&p);
         let mime: Vec<_> = mime.into_iter().map(|m| m.to_string()).collect();
+        let mime_joined = mime.join("|");
         let meta = p.metadata().unwrap();
+        let path_str = p.to_string_lossy().to_string();
+
+        let last = set.get(&f);
+        let created_at_ = meta
+          .created()
+          .unwrap()
+          .duration_since(UNIX_EPOCH)
+          .unwrap()
+          .as_millis()
+          .to_string();
+        let modified_at_ = meta
+          .modified()
+          .unwrap()
+          .duration_since(UNIX_EPOCH)
+          .unwrap()
+          .as_millis()
+          .to_string();
+        let file_name_ = p.file_name().unwrap().to_string_lossy().to_string();
+
+        let mut should_update = true;
+        if let Some(last) = last {
+          if last.modified_at != modified_at_ {
+            should_update = true;
+          }
+        } else {
+          should_update = true;
+        }
+        if should_update {
+          let body = try_parse_sync(&path_str, &mime_joined, meta.len()).map_or(None, |v| v);
+          if let Some(body) = body {
+            insert_docs(
+              vec![Doc {
+                body: &body,
+                path: &f,
+                name: &file_name_,
+              }],
+              &now,
+            )
+            .ok();
+          }
+        }
 
         NewFileIndex {
-          file_name: p.file_name().unwrap().to_string_lossy().to_string(),
+          file_name: file_name_.clone(),
           file_path: f,
           size: meta.len() as i64,
-          format: Some(mime.join("|")),
+          format: Some(mime_joined),
           username: "".to_owned(),
-          created_at: 0,
-          modified_at: 0,
+          created_at: created_at_,
+          modified_at: modified_at_,
           updated_at: now.clone(),
           is_dir: meta.is_dir(),
         }

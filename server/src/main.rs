@@ -60,6 +60,8 @@ pub struct AppState {
   session: AppSession,
   db: Mutex<SqliteConnection>,
 }
+
+#[allow(unused)]
 #[derive(Debug)]
 struct AppConfig {
   file_root: PathBuf,
@@ -70,13 +72,11 @@ struct AppConfig {
 
 pub type AppData = Arc<RwLock<AppState>>;
 
-#[allow(unused)]
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> Result<(), AppError> {
   tracing_subscriber::fmt::init();
 
-  let mut app_state = init();
-  let static_root = app_state.config.static_root.clone();
+  let app_state = init();
   let app_state = Arc::new(RwLock::new(app_state));
 
   let state = app_state.read().unwrap();
@@ -91,7 +91,7 @@ async fn main() -> std::io::Result<()> {
     let upload_temp_dir = config!(upload_temp_dir);
     let awmp_config;
     if let Some(upload_temp_dir) = upload_temp_dir {
-      utils::vfs::ensure_dir_sync(&upload_temp_dir);
+      utils::vfs::ensure_dir_sync(&upload_temp_dir).unwrap();
       awmp_config = awmp::PartsConfig::default().with_temp_dir(&upload_temp_dir);
     } else {
       awmp_config = awmp::PartsConfig::default();
@@ -127,6 +127,9 @@ async fn main() -> std::io::Result<()> {
   .bind(addr)?
   .run()
   .await
+  .unwrap();
+
+  Ok(())
 }
 
 fn init() -> AppState {

@@ -60,6 +60,18 @@ input.search {
     display: flex;
     justify-content: space-between;
 
+    &.item-with-content {
+      flex-wrap: wrap;
+      &>.left {
+        flex: 0 0 100%;
+      }
+      &>.content {
+        color: var(--font-color-light);
+        display: block;
+        white-space: pre-line;
+      }
+    }
+
     &>.left {
       flex: 0 0 350px;
       white-space: nowrap;

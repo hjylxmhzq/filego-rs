@@ -14,6 +14,7 @@ pub struct AppConfig {
   pub use_ffmpeg_trancode: Option<bool>,
   pub ffmpeg_bin_path: Option<String>,
   pub indexing_follow_link: Option<bool>,
+  pub search_index_path: Option<String>,
 }
 
 /// Simple program to greet a person
@@ -46,6 +47,7 @@ impl Default for AppConfig {
       use_ffmpeg_trancode: Some(false),
       ffmpeg_bin_path: Some("ffmpeg".to_owned()),
       indexing_follow_link: Some(true),
+      search_index_path: Some("index".to_owned()),
     }
   }
 }

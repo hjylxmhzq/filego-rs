@@ -105,6 +105,6 @@ export default function StoragePieChart(props: IProps) {
   return <span style={{ display: 'inline-block' }}>
     <span>存储占用: {totalSize}</span>
     <Button onClick={() => setShowType((showType + 1) % 2)}>{showType === 0 ? '切换为细分类型(subtype)' : '切换为主要类型'}</Button>
-    <div style={{ height: 350, width: 500 }} ref={container}></div>
+    <div style={{ height: 350, width: 700 }} ref={container}></div>
   </span>
 }

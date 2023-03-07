@@ -9,6 +9,8 @@ pub mod transcode;
 pub mod stream;
 pub mod path;
 pub mod gallery;
+pub mod search_engine;
+pub mod doc_parser;
 
 #[cfg(debug_assertions)]
 pub mod performance;
