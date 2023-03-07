@@ -290,7 +290,7 @@ pub struct SearchFilesReq {
 pub async fn search(body: web::Json<SearchFilesReq>) -> Result<HttpResponse, AppError> {
   let kw = body.keyword.clone();
 
-  let r = vfs::search_in_index(&kw).await?;
+  let r = vfs::search_in_index(&kw, 100).await?;
 
   Ok(create_resp(true, r, "done"))
 }

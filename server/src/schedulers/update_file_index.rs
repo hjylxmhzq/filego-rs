@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use serde::Serialize;
 use std::{
   collections::HashMap,
-  path::PathBuf,
+  path::{PathBuf, StripPrefixError},
   sync::{Arc, Mutex, RwLock},
   thread::{self, sleep},
   time::{Duration, SystemTime, UNIX_EPOCH},
@@ -26,10 +26,28 @@ lazy_static! {
   pub static ref JOB_UPDATE_GALLERY: Arc<Mutex<UpdateGalleryJob>> =
     Arc::new(Mutex::new(UpdateGalleryJob::new()));
 }
+
+impl From<StripPrefixError> for AppError {
+  fn from(value: StripPrefixError) -> Self {
+    Self {
+      msg: value.to_string(),
+    }
+  }
+}
+
+impl From<walkdir::Error> for AppError {
+  fn from(value: walkdir::Error) -> Self {
+    Self {
+      msg: value.to_string(),
+    }
+  }
+}
+
 #[derive(Clone, Serialize, Debug)]
 pub enum JobStatus {
   Running(u64),
   Idle,
+  Error(String),
 }
 
 pub struct UpdateGalleryJob {
@@ -86,78 +104,66 @@ impl UpdateGalleryJob {
       .filter(file_path.eq_any(&images))
       .load::<FileIndex>(conn)?;
 
-    // diesel::update(file_index)
-    //   .filter(file_path.eq_any(&images))
-    //   .set(updated_at.eq(now.clone()))
-    //   .execute(conn)?;
-
     let set: HashMap<String, FileIndex> = exists
       .into_iter()
       .map(|img| (img.file_path.clone(), img))
       .collect();
-    let to_insert: Vec<NewFileIndex> = images
-      .into_iter()
-      .map(|f| {
-        let p = file_root.join(&f);
-        let mime = mime_guess::from_path(&p);
-        let mime: Vec<_> = mime.into_iter().map(|m| m.to_string()).collect();
-        let mime_joined = mime.join("|");
-        let meta = p.metadata().unwrap();
-        let path_str = p.to_string_lossy().to_string();
+    let mut to_insert_docs = vec![];
+    let mut to_insert: Vec<NewFileIndex> = vec![];
 
-        let last = set.get(&f);
-        let created_at_ = meta
-          .created()
-          .unwrap()
-          .duration_since(UNIX_EPOCH)
-          .unwrap()
-          .as_millis()
-          .to_string();
-        let modified_at_ = meta
-          .modified()
-          .unwrap()
-          .duration_since(UNIX_EPOCH)
-          .unwrap()
-          .as_millis()
-          .to_string();
-        let file_name_ = p.file_name().unwrap().to_string_lossy().to_string();
+    for f in images {
+      let p = file_root.join(&f);
+      let mime = mime_guess::from_path(&p);
+      let mime: Vec<_> = mime.into_iter().map(|m| m.to_string()).collect();
+      let mime_joined = mime.join("|");
+      let meta = p.metadata().unwrap();
+      let path_str = p.to_string_lossy().to_string();
 
-        let mut should_update = true;
-        if let Some(last) = last {
-          if last.modified_at != modified_at_ {
-            should_update = true;
-          }
-        } else {
+      let last = set.get(&f);
+      let created_at_ = meta
+        .created()?
+        .duration_since(UNIX_EPOCH)?
+        .as_millis()
+        .to_string();
+      let modified_at_ = meta
+        .modified()?
+        .duration_since(UNIX_EPOCH)?
+        .as_millis()
+        .to_string();
+      let file_name_ = p.file_name().unwrap().to_string_lossy().to_string();
+
+      let mut should_update = true;
+      if let Some(last) = last {
+        if last.modified_at != modified_at_ {
           should_update = true;
         }
-        if should_update {
-          let body = try_parse_sync(&path_str, &mime_joined, meta.len()).map_or(None, |v| v);
-          if let Some(body) = body {
-            insert_docs(
-              vec![Doc {
-                body: &body,
-                path: &f,
-                name: &file_name_,
-              }],
-              &now,
-            )
-            .ok();
-          }
+      } else {
+        should_update = true;
+      }
+      if should_update {
+        let body = try_parse_sync(&path_str, &mime_joined, meta.len()).map_or(None, |v| v);
+        if let Some(body) = body {
+          to_insert_docs.push(Doc {
+            body,
+            path: f.clone(),
+            name: file_name_.clone(),
+          })
         }
+      }
 
-        NewFileIndex {
-          file_name: file_name_.clone(),
-          file_path: f,
-          size: meta.len() as i64,
-          format: Some(mime_joined),
-          username: "".to_owned(),
-          created_at: created_at_,
-          modified_at: modified_at_,
-          updated_at: now.clone(),
-          is_dir: meta.is_dir(),
-        }
-      })
-      .collect();
+      to_insert.push(NewFileIndex {
+        file_name: file_name_.clone(),
+        file_path: f,
+        size: meta.len() as i64,
+        format: Some(mime_joined),
+        username: "".to_owned(),
+        created_at: created_at_,
+        modified_at: modified_at_,
+        updated_at: now.clone(),
+        is_dir: meta.is_dir(),
+      });
+    }
+    insert_docs(to_insert_docs, &now)?;
     diesel::insert_into(table).values(to_insert).execute(conn)?;
     Ok(())
   }
@@ -171,34 +177,38 @@ impl UpdateGalleryJob {
     let status = self.status.clone();
     let file_root = self.file_root.clone();
     thread::spawn(move || {
-      Self::update(status.clone(), file_root.as_ref().unwrap());
+      Self::update(status.clone(), file_root.as_ref().unwrap()).unwrap_or_else(|err| {
+        *status.write().unwrap() = JobStatus::Error(err.to_string());
+      });
     });
   }
 
-  fn update(status: Arc<RwLock<JobStatus>>, file_root: &PathBuf) {
+  fn update(status: Arc<RwLock<JobStatus>>, file_root: &PathBuf) -> Result<(), AppError> {
     let mut status_lock = status.write().unwrap();
     match *status_lock {
       JobStatus::Idle => *status_lock = JobStatus::Running(0),
-      JobStatus::Running(_) => return,
+      JobStatus::Running(_) => return Ok(()),
+      JobStatus::Error(_) => {
+        JobStatus::Running(0);
+      }
     };
     drop(status_lock);
 
     let file_root = file_root.clone();
     let now = SystemTime::now()
-      .duration_since(UNIX_EPOCH)
-      .unwrap()
+      .duration_since(UNIX_EPOCH)?
       .as_millis()
       .to_string();
     let mut images = vec![];
     let follow_link = config!(indexing_follow_link);
     for entry in WalkDir::new(&file_root).follow_links(follow_link) {
-      let entry = entry.unwrap();
-      let dir = entry.path().strip_prefix(file_root.clone()).unwrap();
+      let entry = entry?;
+      let dir = entry.path().strip_prefix(file_root.clone())?;
       images.push(dir.to_string_lossy().to_string());
       if images.len() > 25 {
         let len = images.len() as u64;
         let to_insert = images.drain(..).collect();
-        Self::insert_files_into_db(to_insert, now.clone(), &file_root).unwrap();
+        Self::insert_files_into_db(to_insert, now.clone(), &file_root)?;
         let mut status_lock = status.write().unwrap();
         if let JobStatus::Running(sum) = *status_lock {
           *status_lock = JobStatus::Running(sum + len);
@@ -209,14 +219,15 @@ impl UpdateGalleryJob {
     }
     if images.len() > 0 {
       let len = images.len() as u64;
-      Self::insert_files_into_db(images, now.clone(), &file_root).unwrap();
+      Self::insert_files_into_db(images, now.clone(), &file_root)?;
       let mut status_lock = status.write().unwrap();
       if let JobStatus::Running(sum) = *status_lock {
         *status_lock = JobStatus::Running(sum + len);
       }
     }
-    Self::cleanup_db(now.clone()).unwrap();
+    Self::cleanup_db(now.clone())?;
     *status.write().unwrap() = JobStatus::Idle;
+    Ok(())
   }
 
   pub fn init(&mut self, at_time: NaiveTime) -> Result<(), AppError> {
@@ -229,7 +240,9 @@ impl UpdateGalleryJob {
 
     let status = self.status.clone();
     let run = move || {
-      Self::update(status.clone(), &file_root);
+      Self::update(status.clone(), &file_root).unwrap_or_else(|err| {
+        *status.write().unwrap() = JobStatus::Error(err.to_string());
+      });
     };
     scheduler.every(1.days()).at_time(at_time).run(run);
 

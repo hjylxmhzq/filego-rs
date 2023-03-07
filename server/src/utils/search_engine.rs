@@ -60,10 +60,10 @@ fn init() -> Index {
 }
 
 #[derive(Debug)]
-pub struct Doc<'a> {
-  pub path: &'a str,
-  pub name: &'a str,
-  pub body: &'a str,
+pub struct Doc {
+  pub path: String,
+  pub name: String,
+  pub body: String,
 }
 
 impl From<tantivy::error::TantivyError> for AppError {
@@ -111,6 +111,7 @@ pub fn insert_docs(docs: Vec<Doc>, now: &str) -> Result<(), AppError> {
   let schema = index.schema();
 
   let mut index_writer = index.writer(10_000_000)?;
+
   let name = schema.get_field("name").unwrap();
   let path = schema.get_field("path").unwrap();
   let body = schema.get_field("body").unwrap();

@@ -15,7 +15,7 @@ const routers: RouteObject[] = [
     element: <HomePage />,
     children: [
       {
-        path: '/setting',
+        path: '/page/setting',
         element: <SettingPage />
       },
       {

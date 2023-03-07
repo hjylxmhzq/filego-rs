@@ -141,7 +141,7 @@ pub async fn create_dir(file_root: &PathBuf, user_root: &str, file: &str) -> Res
   Ok(result)
 }
 
-pub async fn search_in_index(kw: &str) -> Result<Vec<FileIndex>, AppError> {
+pub async fn search_in_index(kw: &str, limit: i64) -> Result<Vec<FileIndex>, AppError> {
   use crate::schema::file_index::dsl::*;
   use diesel::prelude::*;
 
@@ -149,6 +149,7 @@ pub async fn search_in_index(kw: &str) -> Result<Vec<FileIndex>, AppError> {
   let conn = &mut *conn;
   let result = file_index
     .filter(file_name.like(format!("%{kw}%")))
+    .limit(limit)
     .load::<FileIndex>(conn)?;
   Ok(result)
 }

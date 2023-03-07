@@ -30,7 +30,7 @@ function GlobalSettingMenu() {
       }
     </div>
     <div className={style['menu-item']} style={{ width: '120px', textAlign: 'left' }} onClick={() => {
-      history('/setting');
+      history('/page/setting');
     }}>
       <Icon name="setting" size={16} className={style.icon} />
       App Settings
