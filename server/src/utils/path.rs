@@ -1,13 +1,16 @@
-use std::path::PathBuf;
 use super::error::AppError;
+use std::path::PathBuf;
 
 pub fn secure_join(root: &PathBuf, unsafe_path: &PathBuf) -> Result<PathBuf, AppError> {
   if unsafe_path.has_root() {
-    return Err(AppError::new(&format!("path error: path has root {:?}", unsafe_path)));
-  }
-  if let Some(s) = unsafe_path.to_str() {
-    if s.contains("..") {
-      return Err(AppError::new(&("path error: ".to_owned() + s)));
+    return Err(AppError::new(&format!(
+      "path error: path has root {:?}",
+      unsafe_path
+    )));
+  };
+  for s in unsafe_path.components() {
+    if let std::path::Component::ParentDir = s {
+      return Err(AppError::new(&format!("path error: {unsafe_path:?}")));
     }
   }
   let new_path = root.join(unsafe_path);
@@ -17,7 +20,10 @@ pub fn secure_join(root: &PathBuf, unsafe_path: &PathBuf) -> Result<PathBuf, App
 #[allow(unused)]
 pub fn secure_join_symlink(root: &PathBuf, unsafe_path: &PathBuf) -> Result<PathBuf, AppError> {
   if unsafe_path.has_root() {
-    return Err(AppError::new(&format!("path error: path has root {:?}", unsafe_path)));
+    return Err(AppError::new(&format!(
+      "path error: path has root {:?}",
+      unsafe_path
+    )));
   }
   let new_path = root.join(unsafe_path);
   let t1 = new_path.canonicalize()?;
@@ -25,7 +31,7 @@ pub fn secure_join_symlink(root: &PathBuf, unsafe_path: &PathBuf) -> Result<Path
 
   let nc = t1.components();
   let rc = t2.components();
-  
+
   if nc.into_iter().count() < rc.into_iter().count() {
     return Err(AppError::new(&format!("path error: {:?}", unsafe_path)));
   }
