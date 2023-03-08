@@ -57,3 +57,7 @@ features = [
 [features]
 default = ["ffmpeg"]
 ffmpeg = []
+
+[profile.release]
+lto = true
+strip = true
