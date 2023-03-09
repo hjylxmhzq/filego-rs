@@ -1,14 +1,10 @@
 use include_dir::{include_dir, Dir};
 
-use std::{
-  future::{ready, Ready},
-  str::FromStr,
-};
+use std::future::{ready, Ready};
 
 use actix_web::{
   body::BoxBody,
   dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-  http::header::{HeaderName, HeaderValue},
   Error, HttpResponse,
 };
 use futures_util::future::LocalBoxFuture;
@@ -65,17 +61,16 @@ where
   forward_ready!(service);
 
   fn call(&self, req: ServiceRequest) -> Self::Future {
-    if req.path().starts_with("/static/") {
+    let req_path = req.path();
+    if req_path.starts_with("/static/") || req_path == "/favicon.ico" {
       let p = req.path();
       let req = req.request().clone();
       let ret = get_file(&p[1..]);
       if let Some(content) = ret {
         return Box::pin(async move {
-          let mut resp = HttpResponse::Ok().body(content);
-          resp.headers_mut().insert(
-            HeaderName::from_str("cache-control").unwrap(),
-            HeaderValue::from_str("max-age=2592000").unwrap(),
-          );
+          let resp = HttpResponse::Ok()
+            .insert_header(("cache-control", "max-age=2592000"))
+            .body(content);
           let r = ServiceResponse::new(req, resp);
           Ok(r)
         });
