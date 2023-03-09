@@ -103,7 +103,6 @@ async fn main() -> Result<(), AppError> {
       .service(routers::auth::auth_routers())
       .service(routers::gallery::gallery_routers())
       .service(routers::index::index_routers())
-      .wrap(middlewares::static_server::static_server())
       .wrap_fn(move |req, srv| {
         let s = srv.clone();
         let r = middlewares::guard::guard(&req);
@@ -122,6 +121,7 @@ async fn main() -> Result<(), AppError> {
           return Err(err);
         }
       })
+      .wrap(middlewares::static_server::static_server())
       .wrap(middlewares::session::session())
   })
   .bind(addr)?

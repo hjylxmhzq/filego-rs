@@ -6,7 +6,7 @@ export interface Response {
   message: string,
 }
 
-const httpGroupHandlers = new Map<string, AbortController[]>();
+const httpGroupHandlers = new Map<string, [AbortController, Promise<globalThis.Response>]>();
 
 export async function post(api: string, body: any, tag = 'default') {
   let resp = await post_raw(api, body, tag).then(resp => resp.json() as Promise<Response>);
@@ -20,25 +20,22 @@ export async function post(api: string, body: any, tag = 'default') {
 
 // unique request by tag
 export async function post_raw(api: string, body: any, tag: string = 'default') {
-  const abort = new AbortController();
-  const handlers = httpGroupHandlers.get(tag) || [];
-  while (handlers.length) {
-    handlers.pop()?.abort();
+  const handlers = httpGroupHandlers.get(tag);
+  if (handlers) {
+    return handlers[1];
   }
-  handlers.push(abort);
-  httpGroupHandlers.set(tag, handlers);
-  let resp = await fetch(api, {
+  const abort = new AbortController();
+  let p = fetch(api, {
     method: 'post',
     signal: abort.signal,
     body: JSON.stringify(body),
     headers: {
       'content-type': 'application/json',
     }
-  })
-  let idx = handlers.findIndex(i => i === abort);
-  if (idx !== -1) {
-    handlers.splice(idx, 1);
-  }
+  });
+  httpGroupHandlers.set(tag, [abort, p]);
+  let resp = await p;
+  httpGroupHandlers.delete(tag);
   return resp;
 }
 

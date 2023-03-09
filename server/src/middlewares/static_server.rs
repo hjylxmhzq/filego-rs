@@ -61,21 +61,18 @@ where
   forward_ready!(service);
 
   fn call(&self, req: ServiceRequest) -> Self::Future {
-    let req_path = req.path();
-    if req_path.starts_with("/static/") || req_path == "/favicon.ico" {
-      let p = req.path();
-      let req = req.request().clone();
-      let ret = get_file(&p[1..]);
-      if let Some(content) = ret {
-        return Box::pin(async move {
-          let resp = HttpResponse::Ok()
-            .insert_header(("cache-control", "max-age=2592000"))
-            .body(content);
-          let r = ServiceResponse::new(req, resp);
-          Ok(r)
-        });
-      }
+    let p = req.path();
+    let ret = get_file(&p[1..]);
+    if let Some(content) = ret {
+      return Box::pin(async move {
+        let resp = HttpResponse::Ok()
+          .insert_header(("cache-control", "max-age=2592000"))
+          .body(content);
+        let r = ServiceResponse::new(req.request().clone(), resp);
+        Ok(r)
+      });
     }
+
     let fut = self.service.call(req);
     Box::pin(async move {
       let res = fut.await?;
