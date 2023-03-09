@@ -1,10 +1,14 @@
 use include_dir::{include_dir, Dir};
 
-use std::future::{ready, Ready};
+use std::{
+  future::{ready, Ready},
+  str::FromStr,
+};
 
 use actix_web::{
   body::BoxBody,
   dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
+  http::header::{HeaderName, HeaderValue},
   Error, HttpResponse,
 };
 use futures_util::future::LocalBoxFuture;
@@ -67,7 +71,11 @@ where
       let ret = get_file(&p[1..]);
       if let Some(content) = ret {
         return Box::pin(async move {
-          let resp = HttpResponse::Ok().body(content);
+          let mut resp = HttpResponse::Ok().body(content);
+          resp.headers_mut().insert(
+            HeaderName::from_str("cache-control").unwrap(),
+            HeaderValue::from_str("max-age=2592000").unwrap(),
+          );
           let r = ServiceResponse::new(req, resp);
           Ok(r)
         });
