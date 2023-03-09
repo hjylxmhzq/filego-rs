@@ -28,3 +28,11 @@ export async function resetPassword(oldPwd: string, newPwd: string) {
     }
     return false;
 }
+
+export async function requestOneTimeToken(module_prefix = ""): Promise<string> {
+    let resp = await post('/auth/request_one_time_token', { module_prefix });
+    if (resp.status === 0) {
+        return resp.data.token;
+    }
+    throw new Error(resp.message);
+}

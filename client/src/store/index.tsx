@@ -74,7 +74,9 @@ function deserialize(key: string, defaultVal: any) {
 function override(obj: any, toObj: any) {
   if (typeof obj === 'object' && obj && typeof toObj === 'object' && toObj) {
     for (let key of Object.keys(obj)) {
-      if (toObj[key] === undefined) {
+      if (typeof obj[key] !== 'object') {
+        toObj[key] = obj[key];
+      } else if (toObj[key] === undefined) {
         toObj[key] = obj[key];
       } else {
         override(obj[key], toObj[key]);

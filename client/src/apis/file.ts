@@ -1,6 +1,8 @@
 import { AxiosProgressEvent } from "axios";
 import path from "path-browserify";
+import { requestOneTimeToken } from "./auth";
 import { post, post_formdata, post_raw, Response } from "./utils";
+import { setting } from '../store';
 
 export interface FileStat {
   name: string;
@@ -40,10 +42,47 @@ export async function create_dir(dir: string, file: string): Promise<boolean> {
   return resp.status === 0;
 }
 
-export function create_download_link(dir: string, file: string) {
+export async function create_temp_public_download_link(dir: string, file: string) {
+  let token = await requestOneTimeToken('/file');
   const url = new URL('/file/read', window.location.origin);
   const file_path = path.join(dir, file);
   url.searchParams.set('file', file_path);
+  url.searchParams.set('one_time_token', token);
+  return url.toString();
+}
+
+export async function send_to_aria2(dir: string, files: string[]) {
+  let url = setting.download.aria2RpcUrl;
+  if (!url) {
+    // TODO: message
+    throw new Error('aria2 url is not config');
+  }
+  let one_time_token = await requestOneTimeToken('/file');
+  let downloadLinks = files.map(file => {
+    return create_download_link(dir, file, { one_time_token });
+  });
+  console.log(`public links: ${downloadLinks.join(',')}`);
+  let aria2Token = setting.download.aria2RpcToken;
+  let resp = await post_raw(url, {
+    "jsonrpc": "2.0",
+    "method": "aria2.addUri",
+    "id": 'ZmlsZWdvX2FyaWEyX2NsaWVudA==',
+    "params": [
+      `token:${aria2Token}`,
+      downloadLinks,
+      {}
+    ]
+  });
+  return resp;
+}
+
+export function create_download_link(dir: string, file: string, params: Record<string, string> = {}) {
+  const url = new URL('/file/read', window.location.origin);
+  const file_path = path.join(dir, file);
+  url.searchParams.set('file', file_path);
+  for (let k in params) {
+    url.searchParams.set(k, params[k]);
+  }
   return url.toString();
 }
 
@@ -99,13 +138,13 @@ export async function search_files_content(keyword: string) {
 
 export async function get_file_index_updated_at() {
   const url = new URL('/file/index_updated_at', window.location.origin);
-  let resp = await post(url.toString(), { }, 'file_index_updated_at');
+  let resp = await post(url.toString(), {}, 'file_index_updated_at');
   return resp.data;
 }
 
 export async function get_storage_info() {
   const url = new URL('/file/storage_info', window.location.origin);
-  let resp = await post(url.toString(), { }, 'storage_info');
+  let resp = await post(url.toString(), {}, 'storage_info');
   return resp.data;
 }
 

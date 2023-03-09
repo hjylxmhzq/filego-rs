@@ -22,7 +22,7 @@ export async function post(api: string, body: any, tag = 'default') {
 export async function post_raw(api: string, body: any, tag: string = 'default') {
   const handlers = httpGroupHandlers.get(tag);
   if (handlers) {
-    return handlers[1];
+    return handlers[1].then((resp) => resp.clone());
   }
   const abort = new AbortController();
   let p = fetch(api, {
@@ -36,7 +36,7 @@ export async function post_raw(api: string, body: any, tag: string = 'default') 
   httpGroupHandlers.set(tag, [abort, p]);
   let resp = await p;
   httpGroupHandlers.delete(tag);
-  return resp;
+  return resp.clone();
 }
 
 export async function post_formdata(api: string, body: FormData, onUploadProgress?: (e: AxiosProgressEvent) => void) {

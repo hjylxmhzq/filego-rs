@@ -1,4 +1,3 @@
-
 .file-page {
   text-align: left;
   margin: 50px 100px;
@@ -48,10 +47,12 @@
     display: flex;
     justify-content: space-between;
     padding-right: 10px;
+
     &>.title-area {
       &>.checkbox {
         margin-right: 10px;
       }
+
       display: flex;
       align-items: center;
       flex-grow: 1;
@@ -83,6 +84,7 @@
   font-size: 14px;
   flex: 0 0 600px;
   text-align: right;
+
   &>button {
     margin: 0 5px;
     box-shadow: var(--box-shadow);
@@ -92,7 +94,7 @@
 .comfirm-content {
   margin: 3px 10px;
   font-size: 12px;
-  
+
   .comfirm-content-text {
     display: inline-block;
     white-space: nowrap;
@@ -146,10 +148,55 @@
 .empty-list {
   text-align: center;
   padding: 100px 0;
+  flex: 1 1 auto;
   border: 1px solid #aaa;
 }
 
+.file-content {
+  display: flex;
+}
+
+.file-left-menu {
+  flex: 0 0 210px;
+  // background-color: var(--bg-heavy-hover);
+  margin-right: 10px;
+
+  &>.menu-item {
+    &:first-child {
+      margin-top: 0;
+    }
+
+    padding: 5px 15px;
+    background-color: var(--bg-medium);
+    border-radius: 6px;
+    margin-top: 8px;
+    font-size: 14px;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: var(--box-shadow);
+
+    &::before {
+      transition: all 0.2s;
+      content: "";
+      width: 2px;
+      top: 0px;
+      bottom: 0px;
+      height: 0px;
+      left: 5px;
+      margin: auto;
+      position: absolute;
+      background-color: #aaa;
+    }
+
+    &.active::before {
+      height: 15px;
+    }
+  }
+}
+
 .file-list {
+  flex: 1 1 auto;
   background-color: var(--bg-medium);
   box-shadow: var(--box-shadow);
   border-radius: 5px;
@@ -180,6 +227,7 @@
       margin-right: 10px;
       background-color: var(--checkbox-bg);
     }
+
     &:hover {
       background-color: var(--bg-medium-hover);
     }
@@ -209,6 +257,11 @@
     display: block;
     padding: 5px;
     color: var(--font-color);
+    outline: none;
+    border: none;
+    background-color: transparent;
+    text-align: left;
+    box-sizing: border-box;
 
     &:hover {
       background-color: var(--bg-medium-hover);
@@ -244,6 +297,7 @@
     transform: translateX(0px);
   }
 }
+
 @keyframes fade-in1 {
   from {
     transform: translateX(-30px);
@@ -255,6 +309,7 @@
     transform: translateX(0px);
   }
 }
+
 @keyframes fade-in-right1 {
   from {
     transform: translateX(30px);
@@ -266,6 +321,7 @@
     transform: translateX(0px);
   }
 }
+
 @keyframes fade-in-right {
   from {
     transform: translateX(30px);
@@ -301,7 +357,8 @@
   width: 200px;
   margin: 5px 10px;
   color: #333;
-  & ~ button {
+
+  &~button {
     margin: 0 3px;
   }
 }
@@ -315,6 +372,7 @@
 
 .delete-comfirm-modal {
   text-align: center;
+
   &>div {
     padding: 10px;
   }

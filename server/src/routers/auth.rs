@@ -10,6 +10,7 @@ use crate::{
   models::User as TUser,
   schema,
   utils::{
+    auth::create_one_time_token,
     crypto::hash_pwd,
     error::AppError,
     response::{create_resp, EmptyResponseData},
@@ -165,10 +166,29 @@ pub async fn register(
   Ok(create_resp(true, EmptyResponseData::new(), "done"))
 }
 
+#[derive(Debug, Deserialize)]
+pub struct OneTimeTokenReq {
+  pub module_prefix: String,
+}
+
+pub async fn request_one_time_token(
+  sess: Session,
+  body: web::Json<OneTimeTokenReq>,
+) -> Result<HttpResponse, AppError> {
+  let user_data = sess.get::<UserSessionData>("user")?.unwrap();
+  let module_prefix = &body.module_prefix;
+  let token = create_one_time_token(&user_data.username.clone(), module_prefix, 60 * 5);
+  Ok(create_resp(true, token, "done"))
+}
+
 pub fn auth_routers() -> Scope {
   web::scope("/auth")
     .route("/login", web::post().to(login))
     .route("/reset_password", web::post().to(reset_password))
     .route("/register", web::post().to(register))
     .route("/logout", web::post().to(logout))
+    .route(
+      "/request_one_time_token",
+      web::post().to(request_one_time_token),
+    )
 }

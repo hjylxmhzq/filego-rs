@@ -1,5 +1,5 @@
 import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react"
-import { create_compression_download_link, create_dir, create_download_link, delete_file, delete_files, FileStat, read_dir, upload } from "../../apis/file";
+import { create_compression_download_link, create_dir, create_download_link, delete_file, delete_files, FileStat, read_dir, send_to_aria2, upload } from "../../apis/file";
 import path from 'path-browserify';
 import style from './index.module.less';
 import Preview from "./components/preview";
@@ -18,6 +18,7 @@ import { FileIcon } from "../../components/icon/icon";
 import Checkbox from "../../components/checkbox";
 import { setting } from "../../store";
 import SearchInput from "./components/search-input";
+import classNames from "classnames";
 
 export default function FilePage() {
   let [files, setFiles] = useState<any[]>([]);
@@ -121,6 +122,15 @@ export default function FilePage() {
     reloadFiles();
   };
 
+  const [tab, setTab] = useState<'file' | 'favorite' | 'share'>('file');
+
+  let content = <EmptyList />;
+  if (tab === 'file') {
+    if (files.length > 0) {
+      content = fileList;
+    }
+  }
+
   return <div className={style['file-page']}>
     <Modal mask show={showDeleteComfirmModal}>
       <div className={style['delete-comfirm-modal']}>
@@ -184,11 +194,14 @@ export default function FilePage() {
               }
             </div>
           </div>
-          {
-            files.length ?
-              fileList
-              : <EmptyList />
-          }
+          <div className={style['file-content']}>
+            <div className={style['file-left-menu']}>
+              <div className={classNames(style['menu-item'], { [style.active]: tab === 'file' })} onClick={() => setTab('file')}>文件目录</div>
+              <div className={classNames(style['menu-item'], { [style.active]: tab === 'favorite' })} onClick={() => setTab('favorite')}>个人收藏</div>
+              <div className={classNames(style['menu-item'], { [style.active]: tab === 'share' })} onClick={() => setTab('share')}>已分享</div>
+            </div>
+            {content}
+          </div>
         </div>
         : <Preview file={previewing} files={files} dir={currentDir} onClose={gotoDir} />
     }
@@ -281,6 +294,18 @@ function FileList({ onFileChecked, files, onClickFile, currentDir, onReload }: {
           下载Zip
         </a>
           : ''
+    }
+    {
+      !!setting.download.aria2Enabled && !!file.is_file &&
+      <button
+        className={style['action-btn']}
+        onClick={(e) => {
+          e.preventDefault();
+          send_to_aria2(currentDir, [file.name])
+        }}
+      >
+        发送至Aria2
+      </button>
     }
   </div>;
 
