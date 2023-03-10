@@ -37,7 +37,7 @@ fn init() -> Index {
   let body_options = TextOptions::default()
     .set_indexing_options(body_field_indexing)
     .set_stored();
-  
+
   schema_builder.add_text_field("name", TEXT | STORED);
   schema_builder.add_text_field("path", TEXT | STORED);
   schema_builder.add_text_field("body", body_options);
@@ -141,6 +141,25 @@ pub fn cleanup(not_updated_at: &str) -> Result<(), AppError> {
   let mut query_parser = QueryParser::for_index(&index, vec![updated_at]);
   query_parser.set_conjunction_by_default();
   let query_str = format!(r#"updated_at:[0 TO {not_updated_at}}}"#);
+  let query = query_parser.parse_query(&query_str)?;
+
+  index_writer.delete_query(query)?;
+
+  index_writer.commit()?;
+  Ok(())
+}
+
+#[allow(unused)]
+pub fn delete(files: &Vec<String>) -> Result<(), AppError> {
+  let index = SEARCH_INDEX.lock().unwrap();
+  let schema = index.schema();
+  let path = schema.get_field("path").unwrap();
+
+  let mut index_writer = index.writer(10_000_000)?;
+
+  let mut query_parser = QueryParser::for_index(&index, vec![path]);
+  query_parser.set_conjunction_by_default();
+  let query_str = files.into_iter().map(|f| format!(r#""{f}""#)).collect::<Vec<_>>().join(" AND ");
   let query = query_parser.parse_query(&query_str)?;
 
   index_writer.delete_query(query)?;

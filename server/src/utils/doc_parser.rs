@@ -4,6 +4,7 @@ use super::error::AppError;
 use pdf::file::File;
 use tokio::{fs, io::AsyncReadExt};
 
+#[allow(unused)]
 pub async fn read_txt_to_string(file: &str) -> Result<String, AppError> {
   let mut f = fs::File::open(file).await?;
   let mut s = String::new();
@@ -11,7 +12,12 @@ pub async fn read_txt_to_string(file: &str) -> Result<String, AppError> {
   Ok(s)
 }
 
-pub async fn read_pdf_to_string(file: &str) -> Result<String, AppError> {
+pub fn read_txt_to_string_sync(file: &str) -> Result<String, AppError> {
+  let s = std::fs::read_to_string(file)?;
+  Ok(s)
+}
+
+pub fn read_pdf_to_string(file: &str) -> Result<String, AppError> {
   let path = PathBuf::from(file);
   let file = File::open(&path).unwrap();
 
@@ -29,11 +35,12 @@ pub async fn read_pdf_to_string(file: &str) -> Result<String, AppError> {
   Ok(result)
 }
 
+#[allow(unused)]
 pub async fn try_parse(file: &str, mime: &str) -> Result<Option<String>, AppError> {
   if mime.contains("text") {
     return Ok(Some(read_txt_to_string(file).await?));
   } else if mime.contains("pdf") {
-    return Ok(Some(read_pdf_to_string(file).await?));
+    return Ok(Some(read_pdf_to_string(file)?));
   }
   Ok(None)
 }
@@ -43,10 +50,10 @@ pub fn try_parse_sync(file: &str, mime: &str, size: u64) -> Result<Option<String
   if size > max_size {
     return Ok(None);
   }
-  let rt = tokio::runtime::Builder::new_current_thread()
-    .enable_all()
-    .build()
-    .unwrap();
-  let r = rt.block_on(async move { try_parse(file, mime).await });
-  r
+  if mime.contains("text") {
+    return Ok(Some(read_txt_to_string_sync(file)?));
+  } else if mime.contains("pdf") {
+    return Ok(Some(read_pdf_to_string(file)?));
+  }
+  Ok(None)
 }

@@ -1,3 +1,4 @@
+#![feature(const_trait_impl)]
 use crate::utils::error::AppError;
 use actix_web::dev::Service;
 use actix_web::{self, web, App, HttpServer};

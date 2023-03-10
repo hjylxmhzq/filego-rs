@@ -4,13 +4,17 @@ use async_zip::write::ZipFileWriter;
 use async_zip::{Compression, ZipEntryBuilder};
 use diesel::sql_types::Text;
 use diesel::{sql_query, RunQueryDsl};
+use lazy_static::lazy_static;
 use serde::Serialize;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::hash::Hash;
 use std::io::Cursor;
 use std::path::Path;
 use std::rc::Rc;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::UNIX_EPOCH;
 use std::{fs::Metadata, io, path::PathBuf};
 use tantivy::Document;
@@ -18,14 +22,46 @@ use tokio::fs::{self, File};
 use tokio::io::{duplex, AsyncRead, AsyncSeekExt, DuplexStream};
 use tokio_util::io::ReaderStream;
 
+use crate::config;
 use crate::db::SHARED_DB_CONN;
 use crate::models::{FileIndex, FileIndexSizeCount};
+use crate::schedulers::update_file_index::UpdateGalleryJob;
 
 use super::error::AppError;
+use super::eventbus::EventEmitter;
 use super::path::secure_join;
 use super::search_engine::search_docs;
 use super::stream::RangeStream;
 use super::transcode::ffmpeg_scale;
+
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub enum FSHookType {
+  AddFile,
+  DeleteFile,
+}
+
+#[derive(Debug, Clone)]
+pub struct FSHookPayload(pub Vec<String>);
+
+lazy_static! {
+  pub static ref FS_HOOK: Arc<Mutex<EventEmitter<FSHookType, FSHookPayload>>> = {
+    let mut ev = EventEmitter::<FSHookType, FSHookPayload>::new();
+
+    ev.listen(FSHookType::AddFile, |payload| {
+      let file_root = PathBuf::from_str(&config!(file_root)).unwrap();
+      thread::spawn(move || {
+        UpdateGalleryJob::update_file_indices(payload.0, &file_root).unwrap()
+      });
+    });
+
+    ev.listen(FSHookType::DeleteFile, |payload| {
+      thread::spawn(move || {
+        UpdateGalleryJob::delete_file_indices(payload.0).unwrap();
+      });
+    });
+    Arc::new(Mutex::new(ev))
+  };
+}
 
 pub async fn read_dir(
   file_root: &PathBuf,
@@ -97,10 +133,14 @@ pub async fn delete(file_root: &PathBuf, user_root: &str, file: &str) -> Result<
   let dir = normailze_path(file_root, &user_root, &file)?;
   let path_stat = stat(file_root, user_root, file).await?;
   if path_stat.is_dir {
-    fs::remove_dir_all(dir).await?;
+    fs::remove_dir_all(&dir).await?;
   } else {
-    fs::remove_file(dir).await?;
+    fs::remove_file(&dir).await?;
   }
+  FS_HOOK.lock().unwrap().emit(
+    FSHookType::DeleteFile,
+    FSHookPayload(vec![rel_join(user_root, file)?]),
+  );
   Ok(())
 }
 
@@ -109,15 +149,21 @@ pub async fn delete_batch(
   user_root: &str,
   files: Vec<String>,
 ) -> Result<(), AppError> {
+  let mut flist = vec![];
   for file in files {
     let dir = normailze_path(&file_root, &user_root, &file)?;
     let path_stat = stat(file_root, user_root, &file).await?;
     if path_stat.is_dir {
-      fs::remove_dir_all(dir).await?;
+      fs::remove_dir_all(&dir).await?;
     } else {
-      fs::remove_file(dir).await?;
+      fs::remove_file(&dir).await?;
     }
+    flist.push(rel_join(user_root, &file)?);
   }
+  FS_HOOK
+    .lock()
+    .unwrap()
+    .emit(FSHookType::DeleteFile, FSHookPayload(flist));
   Ok(())
 }
 
@@ -137,7 +183,11 @@ pub async fn read_video_transform_stream(
 
 pub async fn create_dir(file_root: &PathBuf, user_root: &str, file: &str) -> Result<(), AppError> {
   let dir = normailze_path(&file_root, &user_root, &file)?;
-  let result = fs::create_dir(dir).await?;
+  let result = fs::create_dir(&dir).await?;
+  FS_HOOK.lock().unwrap().emit(
+    FSHookType::AddFile,
+    FSHookPayload(vec![rel_join(user_root, file)?]),
+  );
   Ok(result)
 }
 
@@ -419,4 +469,9 @@ pub async fn read_entries_in_zip(
     .ok_or(AppError::new("fail to read zip file"))?
     .clone();
   Ok(root)
+}
+
+pub fn rel_join(p1: &str, p2: &str) -> Result<String, AppError> {
+  let p = secure_join(&PathBuf::from_str(p1)?, &PathBuf::from_str(p2)?)?;
+  Ok(p.to_string_lossy().to_string())
 }

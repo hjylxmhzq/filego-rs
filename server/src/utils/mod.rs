@@ -11,6 +11,6 @@ pub mod path;
 pub mod gallery;
 pub mod search_engine;
 pub mod doc_parser;
-
+pub mod eventbus;
 #[cfg(debug_assertions)]
 pub mod performance;

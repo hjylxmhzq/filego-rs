@@ -89,6 +89,29 @@ impl UpdateGalleryJob {
     Ok(())
   }
 
+  pub fn delete_file_indices(files: Vec<String>) -> Result<(), AppError> {
+    use crate::schema::file_index::dsl::*;
+    use crate::schema::file_index::table;
+    use diesel::prelude::*;
+    let mut conn = SHARED_DB_CONN.lock().unwrap();
+    let conn = &mut *conn;
+    let effect = diesel::delete(table.filter(file_path.eq_any(&files)))
+      .execute(conn)
+      .unwrap();
+    println!("delete effect {effect} {files:?}");
+    search_engine::delete(&files).unwrap();
+    Ok(())
+  }
+
+  pub fn update_file_indices(files: Vec<String>, file_root: &PathBuf) -> Result<(), AppError> {
+    let now = SystemTime::now()
+      .duration_since(UNIX_EPOCH)?
+      .as_millis()
+      .to_string();
+    Self::insert_files_into_db(files, now, file_root).unwrap();
+    Ok(())
+  }
+
   fn insert_files_into_db(
     images: Vec<String>,
     now: String,

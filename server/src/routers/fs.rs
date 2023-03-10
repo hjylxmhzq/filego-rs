@@ -5,7 +5,7 @@ use crate::utils::response::{
 };
 use crate::utils::session::SessionUtils;
 use crate::utils::vfs::{
-  ensure_parent_dir_sync, read_file_stream, read_to_zip_stream, FileStatWithName,
+  ensure_parent_dir_sync, read_file_stream, read_to_zip_stream, FileStatWithName, FS_HOOK, FSHookType, FSHookPayload, rel_join,
 };
 use crate::utils::{response::create_resp, vfs};
 use crate::AppData;
@@ -176,16 +176,19 @@ pub async fn upload(
   let user_root = user_root.clone();
   web::block(move || -> Result<(), AppError> {
     let files = parts.files.into_inner();
+    let mut flist = vec![];
     for (filename, file) in files {
       if let Ok(file) = file {
-        let file_path = file_root.join(&user_root).join(filename);
+        let file_path = file_root.join(&user_root).join(&filename);
         ensure_parent_dir_sync(&file_path)?;
         let parent_dir = file_path.parent();
         if let Some(parent_dir) = parent_dir {
           file.persist_in(parent_dir)?;
+          flist.push(rel_join(&user_root, &filename)?);
         }
       }
     }
+    FS_HOOK.lock().unwrap().emit(FSHookType::AddFile, FSHookPayload(flist));
     Ok(())
   })
   .await??;
