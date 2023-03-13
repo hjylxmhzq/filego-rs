@@ -2,6 +2,12 @@
 
 #### build
 
+install build toolchain
+
+```shell
+bash ./build/init-env.sh
+```
+
 build the whole project to ./dist
 
 ```shell
