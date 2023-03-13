@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { formatFileSize } from '../../utils/formatter';
+import { formatFileSize } from '@utils/formatter';
 import style from './index.module.less';
 
 interface Props {

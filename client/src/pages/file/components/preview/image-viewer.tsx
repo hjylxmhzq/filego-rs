@@ -1,10 +1,10 @@
 import classNames from "classnames";
 import { memo, MouseEventHandler, useEffect, useMemo, useRef, useState } from "react";
 import classnames from 'classnames';
-import { create_download_link, create_thumbnail_link, FileStat } from "../../../../apis/file";
+import { create_download_link, create_thumbnail_link, FileStat } from "@apis/file";
 import style from './image-viewer.module.less';
-import { debounce } from "../../../../utils/common";
-import { setting } from "../../../../store";
+import { debounce } from "@utils/common";
+import { setting } from "@store";
 
 function is_image(file: string) {
   return file.toLowerCase().endsWith('.png') || file.toLowerCase().endsWith('.jpeg') || file.toLowerCase().endsWith('.jpg');

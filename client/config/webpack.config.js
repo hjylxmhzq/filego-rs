@@ -66,6 +66,15 @@ const useTailwind = fs.existsSync(
   path.join(paths.appPath, 'tailwind.config.js')
 );
 
+const srcAlias = {
+  "src": path.resolve(__dirname, '../src'),
+};
+
+const dirs = fs.readdirSync(paths.appSrc);
+dirs.forEach(dir => {
+  srcAlias['@' + dir] = path.resolve(__dirname, '../src', dir);
+});
+
 // Get the path to the uncompiled service worker (if it exists).
 const swSrc = paths.swSrc;
 
@@ -324,6 +333,7 @@ module.exports = function (webpackEnv) {
           'scheduler/tracing': 'scheduler/tracing-profiling',
         }),
         ...(modules.webpackAliases || {}),
+        ...srcAlias
       },
       plugins: [
         // Prevents users from importing files from outside of src/ (or node_modules/).

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { FileStat, read_text_file } from "../../../../apis/file";
+import { FileStat, read_text_file } from "@apis/file";
 
 export default function TextPreview({ dir, file }: { dir: string, file: FileStat }) {
 

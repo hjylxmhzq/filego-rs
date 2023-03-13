@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { FileStat, read_zip_entries } from "../../../../apis/file";
+import { FileStat, read_zip_entries } from "@apis/file";
 import style from './zip-viewer.module.less';
 
 export default function ZipPreview({ dir, file }: { dir: string, file: FileStat }) {

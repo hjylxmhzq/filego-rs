@@ -1,13 +1,13 @@
 import { observer } from "mobx-react-lite"
 import { useEffect, useMemo, useState } from "react";
-import { resetPassword } from "../../apis/auth";
-import { get_file_index_updated_at, get_storage_info } from "../../apis/file";
-import { update_index, get_job_status } from "../../apis/gallery";
-import Button from "../../components/button";
-import Checkbox from "../../components/checkbox";
-import { Popover } from "../../components/popover";
-import { setting, Setting } from "../../store";
-import { formatTime } from "../../utils/formatter";
+import { resetPassword } from "@apis/auth";
+import { get_file_index_updated_at, get_storage_info } from "@apis/file";
+import { update_index, get_job_status } from "@apis/gallery";
+import Button from "@components/button";
+import Checkbox from "@components/checkbox";
+import { Popover } from "@components/popover";
+import { setting, Setting } from "@store";
+import { formatTime } from "@utils/formatter";
 import StoragePieChart from "./components/pie-chart";
 import style from './index.module.less';
 

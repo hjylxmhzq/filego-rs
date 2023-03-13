@@ -1,12 +1,12 @@
 import mime from 'mime';
-import { create_download_link, FileStat } from '../../../../apis/file';
+import { create_download_link, FileStat } from '@apis/file';
 import ImagePreview from './image-viewer';
 import TextPreview from './text-viewer';
 import VideoPreview from './video-viewer';
 import style from './index.module.less';
 import { lazy, memo, Suspense, useCallback, useState } from 'react';
 import ZipPreview from './zip-viewer';
-import { setting } from '../../../../store';
+import { setting } from '@store';
 
 function _Preview({ files, dir, file, onClose }: { files: FileStat[], dir: string, file: FileStat, onClose?: () => void }) {
   const [title, setTitle] = useState(file.name);

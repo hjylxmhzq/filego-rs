@@ -19,7 +19,15 @@
     "isolatedModules": false,
     "noEmit": true,
     "jsx": "react-jsx",
-    "useDefineForClassFields": true
+    "useDefineForClassFields": true,
+    "paths": {
+      "src/*": [
+        "./src/*"
+      ],
+      "@*": [
+        "./src/*"
+      ],
+    },
   },
   "include": [
     "src"

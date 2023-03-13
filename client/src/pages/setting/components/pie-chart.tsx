@@ -3,9 +3,9 @@
  */
 import { Chart, Util } from '@antv/g2';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Button from '../../../components/button';
-import { useTheme } from '../../../hooks/common';
-import { formatFileSize } from '../../../utils/formatter';
+import Button from '@components/button';
+import { useTheme } from '@hooks/common';
+import { formatFileSize } from '@utils/formatter';
 
 
 interface IProps {

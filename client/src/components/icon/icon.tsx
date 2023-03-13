@@ -1,5 +1,5 @@
 // @ts-nocheck
-import '../../icons/icons';
+import '@icons/icons';
 import './icon.less';
 import classnames from 'classnames';
 import mime from 'mime';

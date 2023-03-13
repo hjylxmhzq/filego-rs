@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { logout } from "../../../apis/auth";
+import { logout } from "@apis/auth";
 import style from './header.module.less';
 
 export default function Header() {

@@ -1,4 +1,4 @@
-import { create_download_link, FileStat } from "../../../../apis/file";
+import { create_download_link, FileStat } from "@apis/file";
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 import { useEffect, useRef } from "react";
 import style from './pdf-viewer.module.less';

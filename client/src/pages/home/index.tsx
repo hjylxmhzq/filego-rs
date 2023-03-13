@@ -1,7 +1,7 @@
 import { Outlet, useNavigate } from "react-router";
-import { PopButton } from "../../components/button";
-import Icon from "../../components/icon/icon";
-import { useTheme } from "../../hooks/common";
+import { PopButton } from "@components/button";
+import Icon from "@components/icon/icon";
+import { useTheme } from "@hooks/common";
 import Header from "./components/header";
 import style from './index.module.less';
 

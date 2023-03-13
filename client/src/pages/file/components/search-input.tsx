@@ -1,9 +1,9 @@
 import classNames from 'classnames';
 import path from 'path-browserify';
 import { useEffect, useState } from 'react';
-import { search_files, search_files_content } from '../../../apis/file';
-import { FileIcon } from '../../../components/icon/icon';
-import { useDebounceValue } from '../../../hooks/common';
+import { search_files, search_files_content } from '@apis/file';
+import { FileIcon } from '@components/icon/icon';
+import { useDebounceValue } from '@hooks/common';
 import LoadingBar from './loading-bar';
 import style from './search-input.module.less';
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
-import { create_download_link_from_file_path } from "../../apis/file";
-import { get_job_status, list_all_images, update_index } from "../../apis/gallery";
-import Button from "../../components/button";
+import { create_download_link_from_file_path } from "@apis/file";
+import { get_job_status, list_all_images, update_index } from "@apis/gallery";
+import Button from "@components/button";
 import style from './index.module.less';
 
 function load_img_src(el: HTMLImageElement) {

@@ -2,7 +2,7 @@ import { AxiosProgressEvent } from "axios";
 import path from "path-browserify";
 import { requestOneTimeToken } from "./auth";
 import { post, post_formdata, post_raw, Response } from "./utils";
-import { setting } from '../store';
+import { setting } from '@store';
 
 export interface FileStat {
   name: string;

@@ -1,22 +1,22 @@
 import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react"
-import { create_compression_download_link, create_dir, create_download_link, delete_file, delete_files, FileStat, read_dir, send_to_aria2, upload } from "../../apis/file";
+import { create_compression_download_link, create_dir, create_download_link, delete_file, delete_files, FileStat, read_dir, send_to_aria2, upload } from "@apis/file";
 import path from 'path-browserify';
 import style from './index.module.less';
 import Preview from "./components/preview";
-import { Popover } from "../../components/popover";
-import { useRefresh } from "../../hooks/common";
+import { Popover } from "@components/popover";
+import { useRefresh } from "@hooks/common";
 import LoadingBar from "./components/loading-bar";
 import moment from 'moment';
-import { formatFileSize } from "../../utils/formatter";
+import { formatFileSize } from "@utils/formatter";
 import classnames from 'classnames';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Button, { AnimationButton } from "../../components/button";
-import { UploadProgress } from "../../components/progress";
+import Button, { AnimationButton } from "@components/button";
+import { UploadProgress } from "@components/progress";
 import { AxiosProgressEvent } from "axios";
-import Modal from "../../components/modal";
-import { FileIcon } from "../../components/icon/icon";
-import Checkbox from "../../components/checkbox";
-import { setting } from "../../store";
+import Modal from "@components/modal";
+import { FileIcon } from "@components/icon/icon";
+import Checkbox from "@components/checkbox";
+import { setting } from "@store";
 import SearchInput from "./components/search-input";
 import classNames from "classnames";
 

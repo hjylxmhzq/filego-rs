@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { login } from '../../apis/auth';
+import { login } from '@apis/auth';
 import style from './index.module.less';
 
 const LoginPage: React.FC = () => {
