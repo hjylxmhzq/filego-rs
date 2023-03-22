@@ -46,6 +46,13 @@ impl From<awmp::Error> for AppError {
   }
 }
 
+impl From<actix_web::error::HttpError> for AppError {
+  fn from(e: actix_web::error::HttpError) -> Self {
+    let msg = e.to_string();
+    Self { msg }
+  }
+}
+
 impl From<BlockingError> for AppError {
   fn from(e: BlockingError) -> Self {
     let msg = e.to_string();

@@ -37,6 +37,7 @@ pub struct UserSessionData {
   is_login: bool,
   last_login: u64,
   user_root: String,
+  csrf_token: String,
 }
 
 impl UserSessionData {
@@ -46,6 +47,7 @@ impl UserSessionData {
       username: username.to_string(),
       last_login: 0,
       user_root: user_root.to_string(),
+      csrf_token: uuid::Uuid::new_v4().to_string(),
     }
   }
 }
@@ -123,6 +125,7 @@ async fn main() -> Result<(), AppError> {
         }
       })
       .wrap(middlewares::static_server::static_server())
+      .wrap(middlewares::csrf::csrf_token())
       .wrap(middlewares::session::session())
   })
   .bind(addr)?
