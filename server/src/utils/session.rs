@@ -1,4 +1,3 @@
-
 use actix_session::Session;
 
 use crate::UserSessionData;
@@ -25,14 +24,27 @@ pub trait SessionUtils {
   fn is_login(&self) -> Result<bool, AppError>;
   fn get_user_data(&self) -> Result<UserSessionData, AppError>;
   fn get_user_root(&self) -> Result<String, AppError>;
+  fn is_csrf_token_valid(&self, csrf_token: &str) -> Result<bool, AppError>;
+  fn set_csrf_token(&mut self, csrf_token: &str) -> Result<bool, AppError>;
 }
 
 impl SessionUtils for Session {
+  fn is_csrf_token_valid(&self, csrf_token: &str) -> Result<bool, AppError> {
+    let csrf = self.get::<String>("csrf_token")?;
+    if let Some(csrf) = csrf {
+      return Ok(csrf == csrf_token);
+    }
+    Ok(false)
+  }
+  fn set_csrf_token(&mut self, csrf_token: &str) -> Result<bool, AppError> {
+    self.insert("csrf_token", csrf_token.to_string())?;
+    Ok(true)
+  }
   fn is_login(&self) -> Result<bool, AppError> {
-      is_login(self)
+    is_login(self)
   }
   fn get_user_data(&self) -> Result<UserSessionData, AppError> {
-      get_user_data(self)
+    get_user_data(self)
   }
   fn get_user_root(&self) -> Result<String, AppError> {
     let data = self.get_user_data()?;

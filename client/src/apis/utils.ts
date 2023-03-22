@@ -8,10 +8,17 @@ export interface Response {
 
 const httpGroupHandlers = new Map<string, [AbortController, Promise<globalThis.Response>]>();
 
+export function getCsrfToken() {
+  const csrfToken = window.document.cookie.match(/csrf_token=(.+?)($|,)/)?.[1];
+  return csrfToken;
+}
+
 export async function post(api: string, body: any, tag = 'default') {
   let resp = await post_raw(api, body, tag).then(resp => resp.json() as Promise<Response>);
   if (resp.status !== 0) {
     if (resp.message === 'auth error') {
+      window.location.href = '/login';
+    } else if (resp.message === 'invalid csrf token') {
       window.location.href = '/login';
     }
   }
@@ -31,6 +38,7 @@ export async function post_raw(api: string, body: any, tag: string = 'default') 
     body: JSON.stringify(body),
     headers: {
       'content-type': 'application/json',
+      'csrf_token': getCsrfToken() || '',
     }
   });
   httpGroupHandlers.set(tag, [abort, p]);
@@ -40,7 +48,7 @@ export async function post_raw(api: string, body: any, tag: string = 'default') 
 }
 
 export async function post_formdata(api: string, body: FormData, onUploadProgress?: (e: AxiosProgressEvent) => void) {
-  let resp = await axios.postForm(api, body, { responseType: 'json', onUploadProgress });
+  let resp = await axios.postForm(api, body, { headers: { 'csrf_token': getCsrfToken() || '', }, responseType: 'json', onUploadProgress });
   return resp.data;
 }
 
