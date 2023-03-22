@@ -2,13 +2,16 @@ import { RouteObject } from 'react-router';
 import FilePage from './pages/file';
 import GalleryPage from './pages/gallery';
 import { HomePage } from './pages/home';
-import LoginPage from './pages/login';
-import SettingPage from './pages/setting';
 
 const routers: RouteObject[] = [
   {
     path: '/login',
-    element: <LoginPage />
+    async lazy() {
+      const LoginPage = (await import('./pages/login')).default;
+      return {
+        Component: LoginPage,
+      }
+    },
   },
   {
     path: '/',
@@ -16,7 +19,12 @@ const routers: RouteObject[] = [
     children: [
       {
         path: '/page/setting',
-        element: <SettingPage />
+        async lazy() {
+          const SettingPage = (await import('./pages/setting')).default;
+          return {
+            Component: SettingPage,
+          }
+        },
       },
       {
         path: '/page/gallery',
