@@ -79,6 +79,8 @@
     "workbox-webpack-plugin": "^6.4.1"
   },
   "scripts": {
+    "rsbuild": "rspack build",
+    "rsstart": "rspack serve",
     "start": "node scripts/start.js",
     "build": "GENERATE_SOURCEMAP=false BUILD_PATH='../server/static' node scripts/build.js",
     "test": "node scripts/test.js",
@@ -160,6 +162,7 @@
     ]
   },
   "devDependencies": {
+    "@rspack/cli": "^0.1.0",
     "@types/path-browserify": "^1.0.0",
     "copy-webpack-plugin": "^11.0.0",
     "webpack-bundle-analyzer": "^4.8.0",
