@@ -1,11 +1,23 @@
 use std::collections::HashSet;
 
 use actix_session::SessionExt;
-use actix_web::dev::ServiceRequest;
+use std::future::{ready, Ready};
+
+use actix_web::{
+  body::BoxBody,
+  dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
+  Error,
+};
+use futures_util::future::LocalBoxFuture;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::utils::{error::AppError, session::SessionUtils, auth::ONETIME_TOKENS};
+use crate::utils::{
+  auth::ONETIME_TOKENS,
+  error::AppError,
+  response::{create_resp, EmptyResponseData},
+  session::SessionUtils,
+};
 
 lazy_static! {
   pub static ref IGNORE_PATHS: Vec<Regex> = vec![Regex::new(r#"^/static/.+"#).unwrap()];
@@ -45,4 +57,64 @@ pub fn guard(req: &ServiceRequest) -> Result<bool, AppError> {
   }
   let sess = r.get_session();
   sess.is_login()
+}
+
+pub struct Guard;
+
+// Middleware factory is `Transform` trait
+// `S` - type of the next service
+// `B` - type of response's body
+impl<S> Transform<S, ServiceRequest> for Guard
+where
+  S: Service<ServiceRequest, Response = ServiceResponse<BoxBody>, Error = Error>,
+  S::Future: 'static,
+{
+  type Response = ServiceResponse<BoxBody>;
+  type Error = Error;
+  type InitError = ();
+  type Transform = GuardMiddleware<S>;
+  type Future = Ready<Result<Self::Transform, Self::InitError>>;
+
+  fn new_transform(&self, service: S) -> Self::Future {
+    ready(Ok(GuardMiddleware { service }))
+  }
+}
+
+pub struct GuardMiddleware<S> {
+  service: S,
+}
+
+impl<S> Service<ServiceRequest> for GuardMiddleware<S>
+where
+  S: Service<ServiceRequest, Response = ServiceResponse<BoxBody>, Error = Error>,
+  S::Future: 'static,
+{
+  type Response = ServiceResponse<BoxBody>;
+  type Error = actix_web::Error;
+  type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+  forward_ready!(service);
+
+  fn call(&self, req: ServiceRequest) -> Self::Future {
+    let ret = guard(&req);
+    if let Ok(is_valid_request) = ret {
+      if is_valid_request {
+        let fut = self.service.call(req);
+        return Box::pin(async move {
+          let res = fut.await?;
+          Ok(res.map_into_boxed_body())
+        });
+      }
+    }
+
+    return Box::pin(async move {
+      let resp = create_resp(false, EmptyResponseData::new(), "authetication error");
+      let r = ServiceResponse::new(req.request().clone(), resp);
+      Ok(r)
+    });
+  }
+}
+
+pub fn guard_mw() -> Guard {
+  Guard
 }

@@ -1,6 +1,5 @@
 #![feature(const_trait_impl)]
 use crate::utils::error::AppError;
-use actix_web::dev::Service;
 use actix_web::{self, web, App, HttpServer};
 use chrono::NaiveTime;
 use config::APP_CONFIG;
@@ -106,24 +105,7 @@ async fn main() -> Result<(), AppError> {
       .service(routers::auth::auth_routers())
       .service(routers::gallery::gallery_routers())
       .service(routers::index::index_routers())
-      .wrap_fn(move |req, srv| {
-        let s = srv.clone();
-        let r = middlewares::guard::guard(&req);
-        let mut resp = None;
-        if let Ok(r) = r {
-          if r {
-            resp = Some(s.call(req));
-          }
-        }
-        async move {
-          if let Some(r) = resp {
-            let r = r.await;
-            return r;
-          }
-          let err: actix_web::Error = AppError::new("auth error").into();
-          return Err(err);
-        }
-      })
+      .wrap(middlewares::guard::guard_mw())
       .wrap(middlewares::static_server::static_server())
       .wrap(middlewares::csrf::csrf_token())
       .wrap(middlewares::session::session())
