@@ -10,13 +10,43 @@ dirs.forEach(dir => {
   srcAlias['@' + dir] = path.resolve(__dirname, './src', dir);
 });
 
-module.exports = {
-  entry: {
-    main: './src/index.tsx',
+
+const emitSourceMap = process.env.NODE_ENV === 'production' ? false : 'source-map';
+const pages = fs.readdirSync('./src/isolate-pages');
+const outputDir = path.resolve(__dirname, '../server/static');
+
+if (fs.existsSync(outputDir)) {
+  fs.rmSync(outputDir, { recursive: true, force: true });
+}
+
+const entries = pages.reduce((prev, file) => {
+  let entryName = file.split('.')[0];
+  return {
+    ...prev,
+    [entryName]: path.join('./src/isolate-pages', file),
+  }
+}, {
+  main: './src/index.tsx',
+});
+
+const htmlWithChuncks = [
+  {
+    chunks: ['login'],
+    filename: 'login.html',
+    template: './public/index.html'
   },
+  {
+    chunks: ['main'],
+    filename: 'index.html',
+    template: './public/index.html'
+  }
+];
+
+module.exports = {
+  entry: entries,
   output: {
-    filename: 'index.js',
-    path: path.resolve(__dirname, '../server/static'),
+    filename: '[name].js',
+    path: outputDir,
   },
   resolve: {
     alias: {
@@ -57,11 +87,12 @@ module.exports = {
     ],
   },
   builtins: {
-    html: [{ template: './public/index.html' }],
+    html: htmlWithChuncks,
     define: {
       'import.meta.env': "{}",
     },
   },
+  devtool: emitSourceMap,
   devServer: {
     proxy: {
       '/file': {
