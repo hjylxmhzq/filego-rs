@@ -64,3 +64,9 @@ ffmpeg = []
 [profile.release]
 lto = true
 strip = true
+
+[target.x86_64-unknown-linux-gnu]
+pre-build = ["apt-get update && apt-get install sqlite3 && apt-get install libsqlite3-dev"]
+
+[target.aarch64-unknown-linux-gnu]
+pre-build = ["apt-get update && apt-get install sqlite3 && apt-get install libsqlite3-dev"]

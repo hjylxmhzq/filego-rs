@@ -1,5 +1,7 @@
 ### FileGo-rust
 
+[!ci workflow](https://github.com/hjylxmhzq/filego-rs/actions/workflows/build.yml/badge.svg)
+
 #### build
 
 install build toolchain
