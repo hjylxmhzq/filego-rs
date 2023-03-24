@@ -10,6 +10,7 @@ use crate::utils::vfs::{
 use crate::utils::{response::create_resp, vfs};
 use crate::AppData;
 use actix_session::Session;
+use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse, Scope};
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
@@ -36,7 +37,7 @@ pub async fn fs_actions_get(
     .borrow()
     .file
     .clone()
-    .ok_or(AppError::new("query params error"))?;
+    .ok_or(AppError::new("query params error").with_status(StatusCode::BAD_REQUEST))?;
   fs_actions(path, &file, true, req_raw, state, sess).await
 }
 
@@ -51,7 +52,7 @@ pub async fn fs_actions_post(
     .borrow()
     .file
     .clone()
-    .ok_or(AppError::new("query params error"))?;
+    .ok_or(AppError::new("query params error").with_status(StatusCode::BAD_REQUEST))?;
   fs_actions(path, &file, false, req_raw, state, sess).await
 }
 
@@ -159,7 +160,7 @@ pub async fn delete_batch(
     .borrow()
     .files
     .clone()
-    .ok_or(AppError::new("query params error"))?;
+    .ok_or(AppError::new("query params error").with_status(StatusCode::BAD_REQUEST))?;
   vfs::delete_batch(file_root, user_root, files).await?;
   Ok(create_resp(true, EmptyResponseData::new(), ""))
 }
@@ -218,7 +219,7 @@ pub async fn read_image_get(
   state: web::Data<AppData>,
   sess: Session,
 ) -> Result<HttpResponse, AppError> {
-  let file = query.file.clone().ok_or(AppError::new("params error"))?;
+  let file = query.file.clone().ok_or(AppError::new("params error").with_status(StatusCode::BAD_REQUEST))?;
   let resize = query.resize;
   read_image(&file, resize, state, sess).await
 }
@@ -228,7 +229,7 @@ pub async fn read_image_post(
   state: web::Data<AppData>,
   sess: Session,
 ) -> Result<HttpResponse, AppError> {
-  let file = query.file.clone().ok_or(AppError::new("params error"))?;
+  let file = query.file.clone().ok_or(AppError::new("params error").with_status(StatusCode::BAD_REQUEST))?;
   let resize = query.resize;
   read_image(&file, resize, state, sess).await
 }
@@ -262,7 +263,7 @@ pub async fn read_video_transcode_get(
   state: web::Data<AppData>,
   sess: Session,
 ) -> Result<HttpResponse, AppError> {
-  let file = query.file.clone().ok_or(AppError::new("params error"))?;
+  let file = query.file.clone().ok_or(AppError::new("params error").with_status(StatusCode::BAD_REQUEST))?;
   let resize = query.resize.clone();
   let bitrate = query.bitrate.clone();
   let file_root = &state.read().unwrap().config.file_root;

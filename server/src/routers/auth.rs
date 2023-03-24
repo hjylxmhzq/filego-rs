@@ -2,7 +2,7 @@ use actix_session::Session;
 use diesel::prelude::*;
 use std::borrow::Borrow;
 
-use actix_web::{web, HttpResponse, Scope};
+use actix_web::{web, HttpResponse, Scope, http::StatusCode};
 use serde::Deserialize;
 
 use crate::{
@@ -133,7 +133,7 @@ pub async fn logout(sess: Session) -> Result<HttpResponse, AppError> {
       sess.insert("user", user_data)?;
     }
     None => {
-      return Err(AppError::new("user is not login"));
+      return Err(AppError::new("user is not login").with_status(StatusCode::FORBIDDEN));
     }
   }
 

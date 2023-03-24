@@ -372,7 +372,7 @@ pub fn ensure_dir_sync(dir: impl Into<PathBuf>) -> Result<(), AppError> {
 
 impl From<ZipError> for AppError {
   fn from(e: ZipError) -> Self {
-    Self { msg: e.to_string() }
+    AppError::new(&e.to_string())
   }
 }
 

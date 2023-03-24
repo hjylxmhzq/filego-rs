@@ -29,17 +29,13 @@ lazy_static! {
 
 impl From<StripPrefixError> for AppError {
   fn from(value: StripPrefixError) -> Self {
-    Self {
-      msg: value.to_string(),
-    }
+    AppError::new(&value.to_string())
   }
 }
 
 impl From<walkdir::Error> for AppError {
   fn from(value: walkdir::Error) -> Self {
-    Self {
-      msg: value.to_string(),
-    }
+    AppError::new(&value.to_string())
   }
 }
 

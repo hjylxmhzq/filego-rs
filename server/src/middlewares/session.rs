@@ -12,7 +12,7 @@ use crate::utils::error::AppError;
 
 impl From<InvalidHeaderValue> for AppError {
   fn from(e: InvalidHeaderValue) -> Self {
-    Self { msg: e.to_string() }
+    AppError::new(&e.to_string())
   }
 }
 
@@ -76,12 +76,10 @@ impl SessionStore for MemorySessionStore {
   {
     Box::pin(async move {
       let key = uuid::Uuid::new_v4().to_string();
-      let mut state = STATE
-        .write()
-        .unwrap();
+      let mut state = STATE.write().unwrap();
 
       state.insert(key.clone(), InternalState::new(ttl, session_state.clone()));
-      
+
       let now = chrono::Utc::now();
       let mut to_delete = vec![];
       for s in state.iter() {

@@ -70,17 +70,13 @@ pub struct Doc {
 
 impl From<tantivy::error::TantivyError> for AppError {
   fn from(value: tantivy::error::TantivyError) -> Self {
-    Self {
-      msg: value.to_string(),
-    }
+    AppError::new(&value.to_string())
   }
 }
 
 impl From<QueryParserError> for AppError {
   fn from(value: QueryParserError) -> Self {
-    Self {
-      msg: value.to_string(),
-    }
+    AppError::new(&value.to_string())
   }
 }
 
@@ -153,9 +149,7 @@ pub fn cleanup(not_updated_at: &str) -> Result<(), AppError> {
 
 #[allow(unused)]
 pub fn cleanup_stale_data(max_stale_secs: u64) -> Result<(), AppError> {
-  let now = SystemTime::now()
-      .duration_since(UNIX_EPOCH)?
-      .as_millis();
+  let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();
   let delete_before = (now - (max_stale_secs * 1000) as u128).to_string();
   let index = SEARCH_INDEX.lock().unwrap();
   let schema = index.schema();
@@ -184,7 +178,11 @@ pub fn delete(files: &Vec<String>) -> Result<(), AppError> {
 
   let mut query_parser = QueryParser::for_index(&index, vec![path]);
   query_parser.set_conjunction_by_default();
-  let query_str = files.into_iter().map(|f| format!(r#""{f}""#)).collect::<Vec<_>>().join(" AND ");
+  let query_str = files
+    .into_iter()
+    .map(|f| format!(r#""{f}""#))
+    .collect::<Vec<_>>()
+    .join(" AND ");
   let query = query_parser.parse_query(&query_str)?;
 
   index_writer.delete_query(query)?;
