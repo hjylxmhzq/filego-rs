@@ -71,6 +71,16 @@ where
         let r = ServiceResponse::new(req.request().clone(), resp);
         Ok(r)
       });
+    } else {
+      let html_file = format!("{}.html", &p[1..]);
+      let ret = get_file(&html_file);
+      if let Some(content) = ret {
+        return Box::pin(async move {
+          let resp = HttpResponse::Ok().content_type("text/html").body(content);
+          let r = ServiceResponse::new(req.request().clone(), resp);
+          Ok(r)
+        });
+      }
     }
 
     let fut = self.service.call(req);

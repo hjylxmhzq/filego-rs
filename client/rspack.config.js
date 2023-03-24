@@ -26,21 +26,16 @@ const entries = pages.reduce((prev, file) => {
     [entryName]: path.join('./src/isolate-pages', file),
   }
 }, {
-  main: './src/index.tsx',
+  index: './src/index.tsx',
 });
 
-const htmlWithChuncks = [
-  {
-    chunks: ['login'],
-    filename: 'login.html',
+const htmlWithChuncks = Object.keys(entries).map(name => {
+  return {
+    chunks: [name],
+    filename: `${name}.html`,
     template: './public/index.html'
-  },
-  {
-    chunks: ['main'],
-    filename: 'index.html',
-    template: './public/index.html'
-  }
-];
+  };
+});
 
 module.exports = {
   entry: entries,
