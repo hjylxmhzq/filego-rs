@@ -1,5 +1,7 @@
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 use lazy_static::lazy_static;
 use tantivy;
@@ -141,6 +143,29 @@ pub fn cleanup(not_updated_at: &str) -> Result<(), AppError> {
   let mut query_parser = QueryParser::for_index(&index, vec![updated_at]);
   query_parser.set_conjunction_by_default();
   let query_str = format!(r#"updated_at:[0 TO {not_updated_at}}}"#);
+  let query = query_parser.parse_query(&query_str)?;
+
+  index_writer.delete_query(query)?;
+
+  index_writer.commit()?;
+  Ok(())
+}
+
+#[allow(unused)]
+pub fn cleanup_stale_data(max_stale_secs: u64) -> Result<(), AppError> {
+  let now = SystemTime::now()
+      .duration_since(UNIX_EPOCH)?
+      .as_millis();
+  let delete_before = (now - (max_stale_secs * 1000) as u128).to_string();
+  let index = SEARCH_INDEX.lock().unwrap();
+  let schema = index.schema();
+  let updated_at = schema.get_field("updated_at").unwrap();
+
+  let mut index_writer = index.writer(10_000_000)?;
+
+  let mut query_parser = QueryParser::for_index(&index, vec![updated_at]);
+  query_parser.set_conjunction_by_default();
+  let query_str = format!(r#"updated_at:[0 TO {delete_before}}}"#);
   let query = query_parser.parse_query(&query_str)?;
 
   index_writer.delete_query(query)?;

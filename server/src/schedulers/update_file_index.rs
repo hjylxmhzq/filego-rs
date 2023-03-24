@@ -86,6 +86,8 @@ impl UpdateGalleryJob {
       .execute(conn)
       .unwrap();
     search_engine::cleanup(&updated_at_str).unwrap();
+    // let max_stale_secs = 3600 * 24 * 7;
+    // search_engine::cleanup_stale_data(max_stale_secs).unwrap();
     Ok(())
   }
 
