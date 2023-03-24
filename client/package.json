@@ -167,5 +167,6 @@
     "copy-webpack-plugin": "^11.0.0",
     "webpack-bundle-analyzer": "^4.8.0",
     "write-file-webpack-plugin": "^4.5.1"
-  }
+  },
+  "packageManager": "yarn@3.5.0"
 }
