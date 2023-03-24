@@ -4,11 +4,15 @@ on:
   push:
     branches: [ "release" ]
     tags:
-      - '**'   
+      - '**'
   pull_request:
     branches: [ "release" ]
     tags:
-      - '**'   
+      - '**'
+
+
+permissions:
+  contents: write
 
 env:
   CARGO_TERM_COLOR: always
