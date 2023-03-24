@@ -19,7 +19,7 @@ use crate::{
     doc_parser::try_parse_sync,
     error::AppError,
     search_engine::{self, insert_docs, Doc},
-  },
+  }, conv_err,
 };
 
 lazy_static! {
@@ -27,17 +27,8 @@ lazy_static! {
     Arc::new(Mutex::new(UpdateGalleryJob::new()));
 }
 
-impl From<StripPrefixError> for AppError {
-  fn from(value: StripPrefixError) -> Self {
-    AppError::new(&value.to_string())
-  }
-}
-
-impl From<walkdir::Error> for AppError {
-  fn from(value: walkdir::Error) -> Self {
-    AppError::new(&value.to_string())
-  }
-}
+conv_err!(StripPrefixError);
+conv_err!(walkdir::Error);
 
 #[derive(Clone, Serialize, Debug)]
 pub enum JobStatus {

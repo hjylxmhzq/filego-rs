@@ -8,13 +8,9 @@ use chrono::Utc;
 use std::{collections::HashMap, sync::RwLock};
 use time::Duration;
 
-use crate::utils::error::AppError;
+use crate::{utils::error::AppError, conv_err};
 
-impl From<InvalidHeaderValue> for AppError {
-  fn from(e: InvalidHeaderValue) -> Self {
-    AppError::new(&e.to_string())
-  }
-}
+conv_err!(InvalidHeaderValue);
 
 pub fn session() -> SessionMiddleware<MemorySessionStore> {
   let session_ttl = PersistentSession::default();

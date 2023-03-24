@@ -22,7 +22,7 @@ use tokio::fs::{self, File};
 use tokio::io::{duplex, AsyncRead, AsyncSeekExt, DuplexStream};
 use tokio_util::io::ReaderStream;
 
-use crate::config;
+use crate::{config, conv_err};
 use crate::db::SHARED_DB_CONN;
 use crate::models::{FileIndex, FileIndexSizeCount};
 use crate::schedulers::update_file_index::UpdateGalleryJob;
@@ -370,11 +370,7 @@ pub fn ensure_dir_sync(dir: impl Into<PathBuf>) -> Result<(), AppError> {
   Ok(std::fs::create_dir_all(p)?)
 }
 
-impl From<ZipError> for AppError {
-  fn from(e: ZipError) -> Self {
-    AppError::new(&e.to_string())
-  }
-}
+conv_err!(ZipError);
 
 #[derive(Debug, Serialize)]
 pub struct FileStatTreeInner {

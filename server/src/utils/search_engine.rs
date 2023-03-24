@@ -16,6 +16,7 @@ use tantivy::Index;
 use tantivy::ReloadPolicy;
 
 use crate::config;
+use crate::conv_err;
 
 use super::error::AppError;
 
@@ -68,17 +69,8 @@ pub struct Doc {
   pub body: String,
 }
 
-impl From<tantivy::error::TantivyError> for AppError {
-  fn from(value: tantivy::error::TantivyError) -> Self {
-    AppError::new(&value.to_string())
-  }
-}
-
-impl From<QueryParserError> for AppError {
-  fn from(value: QueryParserError) -> Self {
-    AppError::new(&value.to_string())
-  }
-}
+conv_err!(tantivy::error::TantivyError);
+conv_err!(QueryParserError);
 
 pub fn search_docs(query: &str) -> Result<Vec<Document>, AppError> {
   let index = SEARCH_INDEX.lock().unwrap();

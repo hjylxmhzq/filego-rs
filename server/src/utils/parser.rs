@@ -1,15 +1,13 @@
 use std::num::ParseIntError;
 
+use crate::conv_err;
+
 use super::error::AppError;
 use actix_web::{dev::ServiceRequest, http::header::HeaderMap};
 use lazy_static::lazy_static;
 use regex::Regex;
 
-impl From<ParseIntError> for AppError {
-  fn from(e: ParseIntError) -> Self {
-    AppError::new(&e.to_string())
-  }
-}
+conv_err!(ParseIntError);
 
 pub fn parse_range(headers: &HeaderMap, max_len: u64) -> Result<(u64, u64, bool), AppError> {
   lazy_static! {

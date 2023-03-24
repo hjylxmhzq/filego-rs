@@ -12,6 +12,18 @@ pub struct AppError {
   pub status_code: StatusCode,
 }
 
+#[macro_export]
+macro_rules! conv_err (
+  ($err:ty) => {
+    impl From<$err> for AppError {
+      fn from(e: $err) -> Self {
+        let msg = e.to_string();
+        AppError::new(&msg)
+      }
+    }
+  };
+);
+
 impl AppError {
   pub fn new(msg: &str) -> AppError {
     Self {
@@ -31,83 +43,17 @@ impl Display for AppError {
   }
 }
 
-impl From<diesel::result::Error> for AppError {
-  fn from(e: diesel::result::Error) -> Self {
-    let msg = e.to_string();
-    AppError::new(&msg)
-  }
-}
-
-impl From<Infallible> for AppError {
-  fn from(e: Infallible) -> Self {
-    let msg = e.to_string();
-    AppError::new(&msg)
-  }
-}
-
-impl From<awmp::Error> for AppError {
-  fn from(e: awmp::Error) -> Self {
-    let msg = e.to_string();
-    AppError::new(&msg)
-  }
-}
-
-impl From<actix_web::error::HttpError> for AppError {
-  fn from(e: actix_web::error::HttpError) -> Self {
-    let msg = e.to_string();
-    AppError::new(&msg)
-  }
-}
-
-impl From<BlockingError> for AppError {
-  fn from(e: BlockingError) -> Self {
-    let msg = e.to_string();
-    AppError::new(&msg)
-  }
-}
-
-impl From<SystemTimeError> for AppError {
-  fn from(e: SystemTimeError) -> Self {
-    let msg = e.to_string();
-    AppError::new(&msg)
-  }
-}
-
-impl From<std::io::Error> for AppError {
-  fn from(e: std::io::Error) -> Self {
-    let msg = e.to_string();
-    AppError::new(&msg)
-  }
-}
-
-impl From<SessionGetError> for AppError {
-  fn from(e: SessionGetError) -> Self {
-    let msg = e.to_string();
-    AppError::new(&msg)
-  }
-}
-
-impl From<SessionInsertError> for AppError {
-  fn from(e: SessionInsertError) -> Self {
-    let msg = e.to_string();
-    AppError::new(&msg)
-  }
-}
-
-
-impl From<actix_web::Error> for AppError {
-  fn from(e: actix_web::Error) -> Self {
-    let msg = e.to_string();
-    AppError::new(&msg)
-  }
-}
-
-impl From<ImageError> for AppError {
-  fn from(e: ImageError) -> Self {
-    let msg = e.to_string();
-    AppError::new(&msg)
-  }
-}
+conv_err!(diesel::result::Error);
+conv_err!(Infallible);
+conv_err!(awmp::Error);
+conv_err!(actix_web::error::HttpError);
+conv_err!(BlockingError);
+conv_err!(ImageError);
+conv_err!(actix_web::Error);
+conv_err!(SessionInsertError);
+conv_err!(SessionGetError);
+conv_err!(SystemTimeError);
+conv_err!(std::io::Error);
 
 impl ResponseError for AppError {
   fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
