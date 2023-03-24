@@ -106,7 +106,6 @@ where
 }
 
 fn refresh_token(resp: &mut HttpResponse, sess: &mut Session) -> Result<(), AppError> {
-  use tantivy::time;
   let csrf_token = uuid::Uuid::new_v4().to_string();
   let cookie = Cookie::build("csrf_token", &csrf_token)
     .max_age(time::Duration::seconds(3600 * 24 * 30))

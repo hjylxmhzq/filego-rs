@@ -16,7 +16,7 @@ export function getCsrfToken() {
 export async function post(api: string, body: any, tag = 'default') {
   let resp = await post_raw(api, body, tag).then(resp => resp.json() as Promise<Response>);
   if (resp.status !== 0) {
-    if (resp.message === 'auth error') {
+    if (resp.message === 'authentication error') {
       window.location.href = '/login';
     } else if (resp.message === 'invalid csrf token') {
       window.location.href = '/login';

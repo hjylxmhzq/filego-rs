@@ -108,7 +108,7 @@ where
     }
 
     return Box::pin(async move {
-      let resp = create_resp(false, EmptyResponseData::new(), "authetication error");
+      let resp = create_resp(false, EmptyResponseData::new(), "authentication error");
       let r = ServiceResponse::new(req.request().clone(), resp);
       Ok(r)
     });
