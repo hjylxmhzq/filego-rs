@@ -1,6 +1,6 @@
 ### FileGo-rust
 
-[!ci workflow](https://github.com/hjylxmhzq/filego-rs/actions/workflows/build.yml/badge.svg)
+![ci status](https://github.com/hjylxmhzq/filego-rs/actions/workflows/build.yml/badge.svg)
 
 #### build
 
