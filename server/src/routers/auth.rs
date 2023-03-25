@@ -2,7 +2,7 @@ use actix_session::Session;
 use diesel::prelude::*;
 use std::borrow::Borrow;
 
-use actix_web::{web, HttpResponse, Scope, http::StatusCode};
+use actix_web::{http::StatusCode, web, HttpResponse, Scope};
 use serde::Deserialize;
 
 use crate::{
@@ -30,6 +30,25 @@ pub struct RegisterUser {
   name: String,
   password: String,
   email: String,
+}
+
+pub fn login_fake_user(sess: Session) -> Result<bool, AppError> {
+  let name = "admin";
+
+  let user_data = sess.get::<UserSessionData>("user")?;
+
+  match user_data {
+    Some(mut user_data) => {
+      user_data.is_login = true;
+      user_data.user_root = "".to_owned();
+      sess.insert("user", user_data)?;
+    }
+    None => {
+      let new_user_data = UserSessionData::new(name, "");
+      sess.insert("user", new_user_data)?;
+    }
+  }
+  Ok(true)
 }
 
 pub async fn login(

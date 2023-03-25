@@ -10,16 +10,17 @@ dirs.forEach(dir => {
   srcAlias['@' + dir] = path.resolve(__dirname, './src', dir);
 });
 
-
-const emitSourceMap = process.env.NODE_ENV === 'production' ? false : 'source-map';
+const isProd = process.env.NODE_ENV === 'production';
+const emitSourceMap = isProd ? false : 'source-map';
 const pages = fs.readdirSync('./src/isolate-pages');
+const webApps = fs.readdirSync('./src/apps');
 const outputDir = path.resolve(__dirname, '../server/static');
 
-if (fs.existsSync(outputDir)) {
+if (isProd && fs.existsSync(outputDir)) {
   fs.rmSync(outputDir, { recursive: true, force: true });
 }
 
-const entries = pages.reduce((prev, file) => {
+const pageEntries = pages.reduce((prev, file) => {
   let entryName = file.split('.')[0];
   return {
     ...prev,
@@ -29,7 +30,22 @@ const entries = pages.reduce((prev, file) => {
   index: './src/index.tsx',
 });
 
-const htmlWithChuncks = Object.keys(entries).map(name => {
+const webAppEntries = webApps.reduce((prev, app) => {
+  return {
+    ...prev,
+    ['_app-' + app]: {
+      import: path.join('./src/apps', app, 'index.tsx'),
+      library: {
+        // all options under `output.library` can be used here
+        // name: '_app-' + app,
+        type: 'module',
+        umdNamedDefine: true,
+      },
+    },
+  }
+}, {});
+
+const htmlWithChuncks = Object.keys(pageEntries).map(name => {
   return {
     chunks: [name],
     filename: `${name}.html`,
@@ -37,11 +53,23 @@ const htmlWithChuncks = Object.keys(entries).map(name => {
   };
 });
 
+const entries = {
+  ...pageEntries,
+  ...webAppEntries,
+}
+
 module.exports = {
   entry: entries,
   output: {
     filename: '[name].js',
     path: outputDir,
+    library: {
+      // all options under `output.library` can be used here
+      // name: '_app-' + app,
+      name: '[name]',
+      type: 'umd',
+      umdNamedDefine: true,
+    },
   },
   resolve: {
     alias: {
@@ -85,6 +113,7 @@ module.exports = {
     html: htmlWithChuncks,
     define: {
       'import.meta.env': "{}",
+      'process.env.APP_BASE_URL': JSON.stringify('/'),
     },
   },
   devtool: emitSourceMap,

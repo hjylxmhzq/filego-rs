@@ -12,12 +12,12 @@ use futures_util::future::LocalBoxFuture;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::utils::{
+use crate::{utils::{
   auth::ONETIME_TOKENS,
   error::AppError,
   response::{create_resp, EmptyResponseData},
   session::SessionUtils,
-};
+}, config, routers::auth::login_fake_user};
 
 lazy_static! {
   pub static ref IGNORE_PATHS: Vec<Regex> = vec![Regex::new(r#"^/static/.+"#).unwrap()];
@@ -34,6 +34,11 @@ lazy_static! {
 }
 
 pub fn guard(req: &ServiceRequest) -> Result<bool, AppError> {
+  if config!(authentication) == "none" {
+    let sess = req.get_session();
+    login_fake_user(sess).unwrap();
+    return Ok(true);
+  }
   let (r, _) = req.parts();
   let query = qstring::QString::from(r.query_string());
   let one_time_token = query.get("one_time_token");

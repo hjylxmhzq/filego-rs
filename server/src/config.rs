@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::{path::PathBuf, sync::Mutex};
 
 use clap::Parser;
 use lazy_static::lazy_static;
@@ -15,6 +15,7 @@ pub struct AppConfig {
   pub ffmpeg_bin_path: Option<String>,
   pub indexing_follow_link: Option<bool>,
   pub search_index_path: Option<String>,
+  pub authentication: Option<String>,
 }
 
 /// Simple program to greet a person
@@ -28,10 +29,21 @@ struct Args {
 impl AppConfig {
   pub fn init(&mut self) {
     let args = Args::parse();
-    if let Some(config_file) = args.config {
+    let mut config_file = None;
+    if let Some(ref config) = args.config {
+      config_file = Some(config.to_owned());
+    } else {
+      if PathBuf::from("./config.toml").exists() {
+        config_file = Some("./config.toml".to_owned());
+      }
+    }
+    if let Some(config_file) = config_file {
       let content = std::fs::read_to_string(config_file).unwrap();
       *self = toml::from_str(&content).unwrap();
-      println!("app config:\n{}", serde_json::to_string_pretty(self).unwrap());
+      println!(
+        "app config:\n{}",
+        serde_json::to_string_pretty(self).unwrap()
+      );
     }
   }
 }
@@ -48,6 +60,7 @@ impl Default for AppConfig {
       ffmpeg_bin_path: Some("ffmpeg".to_owned()),
       indexing_follow_link: Some(true),
       search_index_path: Some("index".to_owned()),
+      authentication: Some("user".to_owned()),
     }
   }
 }

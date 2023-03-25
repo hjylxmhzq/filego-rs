@@ -106,16 +106,47 @@ module.exports = function (webpackEnv) {
   const isEnvDevelopment = webpackEnv === 'development';
   const isEnvProduction = webpackEnv === 'production';
 
-  const htmlWithChuncks = [
-    {
-      chunks: ['login'],
-      filename: 'login.html',
-    },
-    {
-      excludeChunks: ['login'],
-      filename: 'index.html',
+  const pages = fs.readdirSync('./src/isolate-pages');
+  const webApps = fs.readdirSync('./src/apps');
+
+  const pageEntries = pages.reduce((prev, file) => {
+    let entryName = file.split('.')[0];
+    return {
+      ...prev,
+      [entryName]: path.join('./src/isolate-pages', file),
     }
-  ];
+  }, {
+    main: './src/index.tsx',
+  });
+
+  const webAppEntries = webApps.reduce((prev, app) => {
+    return {
+      ...prev,
+      ['apps/' + app]: {
+        import: path.join('./src/apps', app, 'index.tsx'),
+        library: {
+          // all options under `output.library` can be used here
+          // name: app,
+          type: 'module',
+          // umdNamedDefine: true,
+        },
+      },
+    }
+  }, {});
+
+  const htmlWithChuncks = Object.keys(pageEntries).map(name => {
+    return {
+      chunks: [name],
+      filename: `${name === 'main' ? 'index' : name}.html`,
+      template: './public/index.html'
+    };
+  });
+
+  const entries = {
+    ...pageEntries,
+    ...webAppEntries,
+  }
+
 
   const htmlPlugins = htmlWithChuncks.map((chunkOption) => {
 
@@ -243,6 +274,9 @@ module.exports = function (webpackEnv) {
   };
 
   return {
+    experiments: {
+      outputModule: true,
+    },
     target: ['browserslist'],
     // Webpack noise constrained to errors and warnings
     stats: 'errors-warnings',
@@ -256,10 +290,7 @@ module.exports = function (webpackEnv) {
       : isEnvDevelopment && 'cheap-module-source-map',
     // These are the "entry points" to our application.
     // This means they will be the "root" imports that are included in JS bundle.
-    entry: {
-      'main': paths.appIndexJs,
-      'login': './src/isolate-pages/login.tsx',
-    },
+    entry: entries,
     output: {
       // The build folder.
       path: paths.appBuild,
@@ -268,7 +299,7 @@ module.exports = function (webpackEnv) {
       // There will be one main bundle, and one file per asynchronous chunk.
       // In development, it does not produce real files.
       filename: isEnvProduction
-        ? 'static/js/[name].[contenthash:8].js'
+        ? 'static/js/[name].js'
         : isEnvDevelopment && 'static/js/[name].js',
       // There are also additional JS chunk files if you use code splitting.
       chunkFilename: isEnvProduction

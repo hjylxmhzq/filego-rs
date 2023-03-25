@@ -80,6 +80,7 @@
   },
   "scripts": {
     "rsbuild": "rspack build",
+    "rsdev": "NODE_ENV=development rspack build",
     "rsstart": "rspack serve",
     "start": "node scripts/start.js",
     "build": "GENERATE_SOURCEMAP=false BUILD_PATH='../server/static' node scripts/build.js",
